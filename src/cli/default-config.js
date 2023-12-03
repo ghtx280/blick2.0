@@ -5,7 +5,7 @@
 export default /*js*/`
     const { config } = require('blickcss2');
 
-    module.exports = {
+    module.exports = config({
         input: './src/*.html', // Your input files by glob pattern
         output: './src/output.css', // File in which css will be generated
 
@@ -29,5 +29,5 @@ export default /*js*/`
         //     logLevel: 0, // 0 = errors only, 1 = some, 2 = lots of information
         //     wait: 0, // Time in milliseconds before page refresh
         // },
-    }
+    })
 `

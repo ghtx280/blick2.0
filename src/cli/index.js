@@ -13,6 +13,8 @@ import { createRequire } from 'node:module';
 import BLICK  from '../theme/index.js';
 import RENDER from '../funcs/render.js';
 import COLOR  from './funcs/make-hex.js';
+import defalut_config from './default-config.js';
+
 
 import { isModule  } from './funcs/is-module.js';
 import { deepClone } from './funcs/deep-clone.js';
@@ -26,7 +28,7 @@ const config_file_path = path.resolve(
     `blick.config.${isModule() ? 'c' : ''}js`
 )
 
-const defalut_config = fs.readFileSync(dir + '/default-config.js', 'utf-8');
+// const defalut_config = fs.readFileSync(dir + '/default-config.js', 'utf-8');
 
 function getAttribute(token) {
     return this[token];

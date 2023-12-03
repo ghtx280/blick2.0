@@ -6,311 +6,10 @@ var __export = (target, all) => {
 };
 
 // src/cli/index.js
-import fs2 from "fs";
-
-// src/theme/funcs.js
-var funcs_exports = {};
-__export(funcs_exports, {
-  config: () => config,
-  getHex: () => getHex,
-  getHexAlpha: () => getHexAlpha,
-  getVarColor: () => getVarColor
-});
-
-// src/theme/colors.js
-var colors_default = {
-  black: { def: "#000" },
-  white: { def: "#fff" },
-  gray: { def: "#6b7280", 1: "#f3f4f6", 2: "#d1d5db", 3: "#374151", 4: "#111827" },
-  red: { def: "#ef4444", 1: "#fee2e2", 2: "#fca5a5", 3: "#b91c1c", 4: "#7f1d1d" },
-  orange: { def: "#f97316", 1: "#ffedd5", 2: "#fdba74", 3: "#c2410c", 4: "#7c2d12" },
-  yellow: { def: "#eab308", 1: "#fef9c3", 2: "#fde047", 3: "#a16207", 4: "#713f12" },
-  lime: { def: "#84cc16", 1: "#ecfccb", 2: "#bef264", 3: "#4d7c0f", 4: "#365314" },
-  green: { def: "#22c55e", 1: "#dcfce7", 2: "#86efac", 3: "#15803d", 4: "#14532d" },
-  cyan: { def: "#06b6d4", 1: "#cffafe", 2: "#67e8f9", 3: "#0e7490", 4: "#164e63" },
-  blue: { def: "#3b82f6", 1: "#dbeafe", 2: "#93c5fd", 3: "#1d4ed8", 4: "#1e3a8a" },
-  purple: { def: "#a855f7", 1: "#f3e8ff", 2: "#d8b4fe", 3: "#7e22ce", 4: "#581c87" },
-  pink: { def: "#ec4899", 1: "#fce7f3", 2: "#f9a8d4", 3: "#be185d", 4: "#831843" }
-};
-
-// src/funcs/check-type.js
-var TYPES = {
-  func: (e) => typeof e === "function",
-  str: (e) => typeof e === "string",
-  obj: (e) => typeof e === "object",
-  num: (e) => typeof e === "number",
-  arr: (e) => Array.isArray(e),
-  var: (e) => /^\$.+/.test(e),
-  hex: (e) => /^#[\dabcdef]{3,8}$/.test(String(e).trim()),
-  exist: (e) => e !== void 0
-};
-var is = {
-  ...TYPES,
-  not: new Proxy(TYPES, {
-    get(obj, key) {
-      if (key in obj) {
-        return (val) => !obj[key](val);
-      } else {
-        throw new Error(`Blick: type '${key}' don't exist`);
-      }
-    }
-  })
-};
-
-// src/theme/funcs.js
-var canvas;
-var canvas_ctx;
-if (typeof window !== "undefined") {
-  canvas = document.createElement("canvas");
-  canvas_ctx = canvas.getContext("2d");
-}
-function config(updates, source = this, isFirstCall = true) {
-  if (!is.obj(updates)) {
-    throw new Error(
-      "Blick: The blick.config function must contain an object."
-    );
-  }
-  for (let key in updates) {
-    if (is.obj(updates[key]) && updates[key] !== null && !Array.isArray(updates[key])) {
-      if (!source[key] || typeof source[key] == "string") {
-        source[key] = {};
-      }
-      this.config(updates[key], source[key], false);
-    } else {
-      source[key] = updates[key];
-    }
-  }
-  if (isFirstCall) {
-  }
-  return source;
-}
-function getHex(str) {
-  if (!canvas) {
-    throw Error("function getHex available only in browser");
-  }
-  canvas_ctx.fillStyle = str;
-  return canvas_ctx.fillStyle;
-}
-function getVarColor(str) {
-  if (!colors_default)
-    return;
-  if (is.var(str)) {
-    str = str.slice(1);
-  }
-  const [colorName, shade] = str.split("-");
-  if (shade) {
-    if (colors_default[colorName][shade]) {
-      return colors_default[colorName][shade];
-    } else {
-      throw Error(
-        `Blick: This shade "${shade}" is not exist for "${colorName}".
-Available shades: ${Object.keys(colors_default[colorName]).filter(
-          (e) => e !== "def"
-        )}`
-      );
-    }
-  }
-  return colors_default[colorName]?.def || colors_default[colorName]?.DEFAULT || colors_default[colorName];
-}
-function getHexAlpha(str) {
-  str = +str;
-  if (str < 0 || str > 100) {
-    throw Error("Blick: Alpha value must be a from 0 to 100");
-  }
-  let shade = Math.round(str / 100 * 255).toString(16);
-  if (shade.length === 1) {
-    shade = "0" + shade;
-  }
-  return shade;
-}
-
-// src/cli/funcs/make-hex.js
-function make_hex_default(color, opacity) {
-  const color_names = {
-    aliceblue: "#f0f8ff",
-    antiquewhite: "#faebd7",
-    aqua: "#00ffff",
-    aquamarine: "#7fffd4",
-    azure: "#f0ffff",
-    beige: "#f5f5dc",
-    bisque: "#ffe4c4",
-    black: "#000000",
-    blanchedalmond: "#ffebcd",
-    blue: "#0000ff",
-    blueviolet: "#8a2be2",
-    brown: "#a52a2a",
-    burlywood: "#deb887",
-    cadetblue: "#5f9ea0",
-    chartreuse: "#7fff00",
-    chocolate: "#d2691e",
-    coral: "#ff7f50",
-    cornflowerblue: "#6495ed",
-    cornsilk: "#fff8dc",
-    crimson: "#dc143c",
-    cyan: "#00ffff",
-    darkblue: "#00008b",
-    darkcyan: "#008b8b",
-    darkgoldenrod: "#b8860b",
-    darkgray: "#a9a9a9",
-    darkgreen: "#006400",
-    darkgrey: "#a9a9a9",
-    darkkhaki: "#bdb76b",
-    darkmagenta: "#8b008b",
-    darkolivegreen: "#556b2f",
-    darkorange: "#ff8c00",
-    darkorchid: "#9932cc",
-    darkred: "#8b0000",
-    darksalmon: "#e9967a",
-    darkseagreen: "#8fbc8f",
-    darkslateblue: "#483d8b",
-    darkslategray: "#2f4f4f",
-    darkslategrey: "#2f4f4f",
-    darkturquoise: "#00ced1",
-    darkviolet: "#9400d3",
-    deeppink: "#ff1493",
-    deepskyblue: "#00bfff",
-    dimgray: "#696969",
-    dimgrey: "#696969",
-    dodgerblue: "#1e90ff",
-    firebrick: "#b22222",
-    floralwhite: "#fffaf0",
-    forestgreen: "#228b22",
-    fuchsia: "#ff00ff",
-    gainsboro: "#dcdcdc",
-    ghostwhite: "#f8f8ff",
-    gold: "#ffd700",
-    goldenrod: "#daa520",
-    gray: "#808080",
-    green: "#008000",
-    greenyellow: "#adff2f",
-    grey: "#808080",
-    honeydew: "#f0fff0",
-    hotpink: "#ff69b4",
-    indianred: "#cd5c5c",
-    indigo: "#4b0082",
-    ivory: "#fffff0",
-    khaki: "#f0e68c",
-    lavender: "#e6e6fa",
-    lavenderblush: "#fff0f5",
-    lawngreen: "#7cfc00",
-    lemonchiffon: "#fffacd",
-    lightblue: "#add8e6",
-    lightcoral: "#f08080",
-    lightcyan: "#e0ffff",
-    lightgoldenrodyellow: "#fafad2",
-    lightgray: "#d3d3d3",
-    lightgreen: "#90ee90",
-    lightgrey: "#d3d3d3",
-    lightpink: "#ffb6c1",
-    lightsalmon: "#ffa07a",
-    lightseagreen: "#20b2aa",
-    lightskyblue: "#87cefa",
-    lightslategray: "#778899",
-    lightslategrey: "#778899",
-    lightsteelblue: "#b0c4de",
-    lightyellow: "#ffffe0",
-    lime: "#00ff00",
-    limegreen: "#32cd32",
-    linen: "#faf0e6",
-    magenta: "#ff00ff",
-    maroon: "#800000",
-    mediumaquamarine: "#66cdaa",
-    mediumblue: "#0000cd",
-    mediumorchid: "#ba55d3",
-    mediumpurple: "#9370db",
-    mediumseagreen: "#3cb371",
-    mediumslateblue: "#7b68ee",
-    mediumspringgreen: "#00fa9a",
-    mediumturquoise: "#48d1cc",
-    mediumvioletred: "#c71585",
-    midnightblue: "#191970",
-    mintcream: "#f5fffa",
-    mistyrose: "#ffe4e1",
-    moccasin: "#ffe4b5",
-    navajowhite: "#ffdead",
-    navy: "#000080",
-    oldlace: "#fdf5e6",
-    olive: "#808000",
-    olivedrab: "#6b8e23",
-    orange: "#ffa500",
-    orangered: "#ff4500",
-    orchid: "#da70d6",
-    palegoldenrod: "#eee8aa",
-    palegreen: "#98fb98",
-    paleturquoise: "#afeeee",
-    palevioletred: "#db7093",
-    papayawhip: "#ffefd5",
-    peachpuff: "#ffdab9",
-    peru: "#cd853f",
-    pink: "#ffc0cb",
-    plum: "#dda0dd",
-    powderblue: "#b0e0e6",
-    purple: "#800080",
-    rebeccapurple: "#663399",
-    red: "#ff0000",
-    rosybrown: "#bc8f8f",
-    royalblue: "#4169e1",
-    saddlebrown: "#8b4513",
-    salmon: "#fa8072",
-    sandybrown: "#f4a460",
-    seagreen: "#2e8b57",
-    seashell: "#fff5ee",
-    sienna: "#a0522d",
-    silver: "#c0c0c0",
-    skyblue: "#87ceeb",
-    slateblue: "#6a5acd",
-    slategray: "#708090",
-    slategrey: "#708090",
-    snow: "#fffafa",
-    springgreen: "#00ff7f",
-    steelblue: "#4682b4",
-    tan: "#d2b48c",
-    teal: "#008080",
-    thistle: "#d8bfd8",
-    tomato: "#ff6347",
-    turquoise: "#40e0d0",
-    violet: "#ee82ee",
-    wheat: "#f5deb3",
-    white: "#ffffff",
-    whitesmoke: "#f5f5f5",
-    yellow: "#ffff00",
-    yellowgreen: "#9acd32"
-  };
-  const rgbToHex = (r = "0", g = "0", b = "0") => "#" + [r, g, b].map((x) => {
-    const hex = x.toString(16);
-    return hex.length === 1 ? "0" + hex : hex;
-  }).join("");
-  opacity = opacity ? getHexAlpha(opacity) : "";
-  if (color[0] === "#") {
-    if (color.length === 4) {
-      let r = color[1];
-      let g = color[2];
-      let b = color[3];
-      return "#" + r + r + g + g + b + b + opacity;
-    } else {
-      return color + opacity;
-    }
-  } else if (color.startsWith("rgb")) {
-    let [r, g, b, a] = color.match(/\((.+)\)/)[1].trim().split(/\s*,\s*/);
-    if (a) {
-      return color;
-    } else {
-      return rgbToHex(r, g, b) + opacity;
-    }
-  } else {
-    if (!color_names[color]) {
-      throw new SyntaxError(`Invalid color "${color}"`);
-    }
-    return color_names[color] + opacity;
-  }
-}
-
-// src/cli/index.js
+import fs from "fs";
 import chokidar from "chokidar";
 import fg from "fast-glob";
-import beautify from "js-beautify";
-import liveServer from "live-server";
-import path2, { dirname } from "path";
+import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import { createRequire } from "node:module";
 
@@ -1195,6 +894,10 @@ var flex_default = {
   stretch: "align-items:stretch",
   grow: { _one: "flex-grow:1", _prop: "flex-grow:$" },
   shrink: { _one: "flex-shrink:1", _prop: "flex-shrink:$" },
+  start: "justify-content: flex-start",
+  end: "justify-content: flex-end",
+  top: "align-items: flex-start",
+  bottom: "align-items: flex-end",
   wrap: {
     _one: "flex-wrap:wrap",
     _prop: "flex-wrap:$",
@@ -1377,6 +1080,22 @@ var states_default = {
   dark: (selector) => `.dark ${selector}`
 };
 
+// src/theme/colors.js
+var colors_default = {
+  black: { def: "#000" },
+  white: { def: "#fff" },
+  gray: { def: "#6b7280", 1: "#f3f4f6", 2: "#d1d5db", 3: "#374151", 4: "#111827" },
+  red: { def: "#ef4444", 1: "#fee2e2", 2: "#fca5a5", 3: "#b91c1c", 4: "#7f1d1d" },
+  orange: { def: "#f97316", 1: "#ffedd5", 2: "#fdba74", 3: "#c2410c", 4: "#7c2d12" },
+  yellow: { def: "#eab308", 1: "#fef9c3", 2: "#fde047", 3: "#a16207", 4: "#713f12" },
+  lime: { def: "#84cc16", 1: "#ecfccb", 2: "#bef264", 3: "#4d7c0f", 4: "#365314" },
+  green: { def: "#22c55e", 1: "#dcfce7", 2: "#86efac", 3: "#15803d", 4: "#14532d" },
+  cyan: { def: "#06b6d4", 1: "#cffafe", 2: "#67e8f9", 3: "#0e7490", 4: "#164e63" },
+  blue: { def: "#3b82f6", 1: "#dbeafe", 2: "#93c5fd", 3: "#1d4ed8", 4: "#1e3a8a" },
+  purple: { def: "#a855f7", 1: "#f3e8ff", 2: "#d8b4fe", 3: "#7e22ce", 4: "#581c87" },
+  pink: { def: "#ec4899", 1: "#fce7f3", 2: "#f9a8d4", 3: "#be185d", 4: "#831843" }
+};
+
 // src/theme/font.js
 var font_default = {
   main: "system-ui,-apple-system,sans-serif",
@@ -1387,6 +1106,106 @@ var font_default = {
 
 // src/theme/reset.js
 var reset_default = `*,::after,::before{box-sizing:border-box;object-fit:cover;-webkit-tap-highlight-color:transparent;font-feature-settings:"pnum" on,"lnum" on;outline:0;border:0;margin:0;padding:0;border-style:solid;color:inherit}h1,h2,h3,h4,h5,h6{font-size:var(--fsz);font-weight:700;line-height:1.2}h1{--fsz:2.5rem}h2{--fsz:2rem}h3{--fsz:1.75rem}h4{--fsz:1.5rem}h5{--fsz:1.25rem}h6{--fsz:1rem}a{text-decoration:none}hr{width:100%;margin:20px 0;border-top:1px solid #aaa}ul[role="list"],ol[role="list"]{list-style:none}html:focus-within{scroll-behavior:smooth}body{text-rendering:optimizeSpeed;font-family:var(--font-main)}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;vertical-align:middle}input,button,textarea,select{font:inherit}[hidden]{display:none}option{color:#000;background-color:#fff}.theme-dark{background-color:#222}.theme-dark *{color:#eee}`;
+
+// src/theme/funcs.js
+var funcs_exports = {};
+__export(funcs_exports, {
+  config: () => config,
+  getHex: () => getHex,
+  getHexAlpha: () => getHexAlpha,
+  getVarColor: () => getVarColor
+});
+
+// src/funcs/check-type.js
+var TYPES = {
+  func: (e) => typeof e === "function",
+  str: (e) => typeof e === "string",
+  obj: (e) => typeof e === "object",
+  num: (e) => typeof e === "number",
+  arr: (e) => Array.isArray(e),
+  var: (e) => /^\$.+/.test(e),
+  hex: (e) => /^#[\dabcdef]{3,8}$/.test(String(e).trim()),
+  exist: (e) => e !== void 0
+};
+var is = {
+  ...TYPES,
+  not: new Proxy(TYPES, {
+    get(obj, key) {
+      if (key in obj) {
+        return (val) => !obj[key](val);
+      } else {
+        throw new Error(`Blick: type '${key}' don't exist`);
+      }
+    }
+  })
+};
+
+// src/theme/funcs.js
+var canvas;
+var canvas_ctx;
+if (typeof window !== "undefined") {
+  canvas = document.createElement("canvas");
+  canvas_ctx = canvas.getContext("2d");
+}
+function config(updates, source = this, isFirstCall = true) {
+  if (!is.obj(updates)) {
+    throw new Error(
+      "Blick: The blick.config function must contain an object."
+    );
+  }
+  for (let key in updates) {
+    if (is.obj(updates[key]) && updates[key] !== null && !Array.isArray(updates[key])) {
+      if (!source[key] || typeof source[key] == "string") {
+        source[key] = {};
+      }
+      this.config(updates[key], source[key], false);
+    } else {
+      source[key] = updates[key];
+    }
+  }
+  if (isFirstCall) {
+  }
+  return source;
+}
+function getHex(str) {
+  if (!canvas) {
+    throw Error("function getHex available only in browser");
+  }
+  canvas_ctx.fillStyle = str;
+  return canvas_ctx.fillStyle;
+}
+function getVarColor(str) {
+  if (!colors_default)
+    return;
+  if (is.var(str)) {
+    str = str.slice(1);
+  }
+  const [colorName, shade] = str.split("-");
+  if (shade) {
+    if (colors_default[colorName][shade]) {
+      return colors_default[colorName][shade];
+    } else {
+      throw Error(
+        `Blick: This shade "${shade}" is not exist for "${colorName}".
+Available shades: ${Object.keys(colors_default[colorName]).filter(
+          (e) => e !== "def"
+        )}`
+      );
+    }
+  }
+  return colors_default[colorName]?.def || colors_default[colorName]?.DEFAULT || colors_default[colorName];
+}
+function getHexAlpha(str) {
+  str = +str;
+  if (str < 0 || str > 100) {
+    throw Error("Blick: Alpha value must be a from 0 to 100");
+  }
+  let shade = Math.round(str / 100 * 255).toString(16);
+  if (shade.length === 1) {
+    shade = "0" + shade;
+  }
+  return shade;
+}
 
 // src/funcs/format-selector.js
 function format_selector_default(str, model = "class") {
@@ -1455,8 +1274,8 @@ function parseStates(state, attr) {
 }
 
 // src/funcs/parser/parse-rule.js
-function parseRule(path3, object) {
-  const PARTS = path3.split(/(?<!\\)-/g);
+function parseRule(path2, object) {
+  const PARTS = path2.split(/(?<!\\)-/g);
   let array_path = [];
   let value_string = null;
   for (const i in PARTS) {
@@ -1536,7 +1355,7 @@ function parseStyles(style, attr) {
   let object = theme_default.attr[attr] || theme_default.class;
   let property = null;
   let values = null;
-  let { source, path: path3, value } = parseRule(style, object);
+  let { source, path: path2, value } = parseRule(style, object);
   if (!source && attr !== "class") {
     let [s, v] = theme_default.attr[attr]._else(style) || [null, null];
     source = s;
@@ -1554,7 +1373,7 @@ function parseStyles(style, attr) {
     return null;
   return {
     src: source,
-    path: path3,
+    path: path2,
     prop: property,
     values,
     rawVal: value,
@@ -1705,7 +1524,7 @@ function create_root_default() {
 }
 
 // src/funcs/create-css.js
-function create_css_default(root3) {
+function create_css_default(root2) {
   let media_str = "";
   let css_str = "";
   let CSS = theme_default._STORE_.B_CSS_STORE;
@@ -1723,13 +1542,8 @@ ${aaa}}
     css_str += CSS[attr] + "\n";
   }
   return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
-  ${theme_default.reset || ""}
-  ${theme_default.root ? root3 : ""}
-  ${theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : ""}
-  ${theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : ""}
-  ${theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : ""}
-  ${css_str + media_str}
-  `;
+
+` + (theme_default.reset ? theme_default.reset : "") + (theme_default.reset ? theme_default.reset : "") + (theme_default.root ? root2 : "") + (theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : "") + (theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : "") + (theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : "") + css_str + media_str;
 }
 
 // src/funcs/prerender.js
@@ -1803,7 +1617,7 @@ function checkRecord(rec = []) {
 
 // src/funcs/render.js
 var once;
-var root2;
+var root;
 function render_default(record, params = {}) {
   if (record && !checkRecord(record))
     return;
@@ -1815,7 +1629,7 @@ function render_default(record, params = {}) {
   const ATTRS2 = ["class", ...Object.keys(theme_default.attr)];
   const NODES = params.NODES || document.querySelectorAll(ATTRS2.map((e) => `[${e}]`).join());
   if (!once || theme_default._CLI_) {
-    root2 = create_root_default();
+    root = create_root_default();
     prerender_default();
     once = true;
   }
@@ -1864,27 +1678,237 @@ function render_default(record, params = {}) {
     }
   });
   if (is_style_updated) {
-    style_tag_default.textContent = create_css_default(root2);
+    style_tag_default.textContent = create_css_default(root);
     if (theme_default.time)
       TIMER.stop();
   }
   return style_tag_default.textContent;
 }
 
-// src/cli/funcs/proj-type.js
-import fs from "fs";
-import path from "path";
-function getProjectType(is_type) {
-  try {
-    const pkg_raw = fs.readFileSync(
-      path.resolve(process.cwd(), "package.json"),
-      "utf-8"
-    );
-    const pkg = JSON.parse(pkg_raw);
-    if (is_type) {
-      return pkg.type === (is_type || "module");
+// src/cli/funcs/make-hex.js
+function make_hex_default(color, opacity) {
+  const color_names = {
+    aliceblue: "#f0f8ff",
+    antiquewhite: "#faebd7",
+    aqua: "#00ffff",
+    aquamarine: "#7fffd4",
+    azure: "#f0ffff",
+    beige: "#f5f5dc",
+    bisque: "#ffe4c4",
+    black: "#000000",
+    blanchedalmond: "#ffebcd",
+    blue: "#0000ff",
+    blueviolet: "#8a2be2",
+    brown: "#a52a2a",
+    burlywood: "#deb887",
+    cadetblue: "#5f9ea0",
+    chartreuse: "#7fff00",
+    chocolate: "#d2691e",
+    coral: "#ff7f50",
+    cornflowerblue: "#6495ed",
+    cornsilk: "#fff8dc",
+    crimson: "#dc143c",
+    cyan: "#00ffff",
+    darkblue: "#00008b",
+    darkcyan: "#008b8b",
+    darkgoldenrod: "#b8860b",
+    darkgray: "#a9a9a9",
+    darkgreen: "#006400",
+    darkgrey: "#a9a9a9",
+    darkkhaki: "#bdb76b",
+    darkmagenta: "#8b008b",
+    darkolivegreen: "#556b2f",
+    darkorange: "#ff8c00",
+    darkorchid: "#9932cc",
+    darkred: "#8b0000",
+    darksalmon: "#e9967a",
+    darkseagreen: "#8fbc8f",
+    darkslateblue: "#483d8b",
+    darkslategray: "#2f4f4f",
+    darkslategrey: "#2f4f4f",
+    darkturquoise: "#00ced1",
+    darkviolet: "#9400d3",
+    deeppink: "#ff1493",
+    deepskyblue: "#00bfff",
+    dimgray: "#696969",
+    dimgrey: "#696969",
+    dodgerblue: "#1e90ff",
+    firebrick: "#b22222",
+    floralwhite: "#fffaf0",
+    forestgreen: "#228b22",
+    fuchsia: "#ff00ff",
+    gainsboro: "#dcdcdc",
+    ghostwhite: "#f8f8ff",
+    gold: "#ffd700",
+    goldenrod: "#daa520",
+    gray: "#808080",
+    green: "#008000",
+    greenyellow: "#adff2f",
+    grey: "#808080",
+    honeydew: "#f0fff0",
+    hotpink: "#ff69b4",
+    indianred: "#cd5c5c",
+    indigo: "#4b0082",
+    ivory: "#fffff0",
+    khaki: "#f0e68c",
+    lavender: "#e6e6fa",
+    lavenderblush: "#fff0f5",
+    lawngreen: "#7cfc00",
+    lemonchiffon: "#fffacd",
+    lightblue: "#add8e6",
+    lightcoral: "#f08080",
+    lightcyan: "#e0ffff",
+    lightgoldenrodyellow: "#fafad2",
+    lightgray: "#d3d3d3",
+    lightgreen: "#90ee90",
+    lightgrey: "#d3d3d3",
+    lightpink: "#ffb6c1",
+    lightsalmon: "#ffa07a",
+    lightseagreen: "#20b2aa",
+    lightskyblue: "#87cefa",
+    lightslategray: "#778899",
+    lightslategrey: "#778899",
+    lightsteelblue: "#b0c4de",
+    lightyellow: "#ffffe0",
+    lime: "#00ff00",
+    limegreen: "#32cd32",
+    linen: "#faf0e6",
+    magenta: "#ff00ff",
+    maroon: "#800000",
+    mediumaquamarine: "#66cdaa",
+    mediumblue: "#0000cd",
+    mediumorchid: "#ba55d3",
+    mediumpurple: "#9370db",
+    mediumseagreen: "#3cb371",
+    mediumslateblue: "#7b68ee",
+    mediumspringgreen: "#00fa9a",
+    mediumturquoise: "#48d1cc",
+    mediumvioletred: "#c71585",
+    midnightblue: "#191970",
+    mintcream: "#f5fffa",
+    mistyrose: "#ffe4e1",
+    moccasin: "#ffe4b5",
+    navajowhite: "#ffdead",
+    navy: "#000080",
+    oldlace: "#fdf5e6",
+    olive: "#808000",
+    olivedrab: "#6b8e23",
+    orange: "#ffa500",
+    orangered: "#ff4500",
+    orchid: "#da70d6",
+    palegoldenrod: "#eee8aa",
+    palegreen: "#98fb98",
+    paleturquoise: "#afeeee",
+    palevioletred: "#db7093",
+    papayawhip: "#ffefd5",
+    peachpuff: "#ffdab9",
+    peru: "#cd853f",
+    pink: "#ffc0cb",
+    plum: "#dda0dd",
+    powderblue: "#b0e0e6",
+    purple: "#800080",
+    rebeccapurple: "#663399",
+    red: "#ff0000",
+    rosybrown: "#bc8f8f",
+    royalblue: "#4169e1",
+    saddlebrown: "#8b4513",
+    salmon: "#fa8072",
+    sandybrown: "#f4a460",
+    seagreen: "#2e8b57",
+    seashell: "#fff5ee",
+    sienna: "#a0522d",
+    silver: "#c0c0c0",
+    skyblue: "#87ceeb",
+    slateblue: "#6a5acd",
+    slategray: "#708090",
+    slategrey: "#708090",
+    snow: "#fffafa",
+    springgreen: "#00ff7f",
+    steelblue: "#4682b4",
+    tan: "#d2b48c",
+    teal: "#008080",
+    thistle: "#d8bfd8",
+    tomato: "#ff6347",
+    turquoise: "#40e0d0",
+    violet: "#ee82ee",
+    wheat: "#f5deb3",
+    white: "#ffffff",
+    whitesmoke: "#f5f5f5",
+    yellow: "#ffff00",
+    yellowgreen: "#9acd32"
+  };
+  const rgbToHex = (r = "0", g = "0", b = "0") => "#" + [r, g, b].map((x) => {
+    const hex = x.toString(16);
+    return hex.length === 1 ? "0" + hex : hex;
+  }).join("");
+  opacity = opacity ? getHexAlpha(opacity) : "";
+  if (color[0] === "#") {
+    if (color.length === 4) {
+      let r = color[1];
+      let g = color[2];
+      let b = color[3];
+      return "#" + r + r + g + g + b + b + opacity;
+    } else {
+      return color + opacity;
     }
-    return pkg.type;
+  } else if (color.startsWith("rgb")) {
+    let [r, g, b, a] = color.match(/\((.+)\)/)[1].trim().split(/\s*,\s*/);
+    if (a) {
+      return color;
+    } else {
+      return rgbToHex(r, g, b) + opacity;
+    }
+  } else {
+    if (!color_names[color]) {
+      throw new SyntaxError(`Invalid color "${color}"`);
+    }
+    return color_names[color] + opacity;
+  }
+}
+
+// src/cli/default-config.js
+var default_config_default = (
+  /*js*/
+  `
+    const { config } = require('blickcss2');
+
+    module.exports = config({
+        input: './src/*.html', // Your input files by glob pattern
+        output: './src/output.css', // File in which css will be generated
+
+        // your configurations
+
+        beautify: true, // For beautify css code
+        watch: true, // For watching changing the input files and rebuilding
+
+        reset: false,
+        root: false,
+        wrapper: false,
+        autoFlex: false,
+
+        server: false,
+        // If you need a live preview server, uncomment the code below
+        // server: {
+        //     open: true, // Open the browser after server start
+        //     port: 6050, // Port on which the server will start
+        //     host: '0.0.0.0', // Host on which the server will start
+        //     root: '/src', // Root directory from which the server will serve files
+        //     logLevel: 0, // 0 = errors only, 1 = some, 2 = lots of information
+        //     wait: 0, // Time in milliseconds before page refresh
+        // },
+    })
+`
+);
+
+// src/cli/funcs/is-module.js
+import { readFileSync } from "fs";
+import { resolve } from "path";
+function isModule() {
+  try {
+    const path2 = resolve("package.json");
+    const content = readFileSync(path2, "utf-8");
+    const json = JSON.parse(content);
+    return json.type === "module";
   } catch (error) {
     return null;
   }
@@ -1892,37 +1916,354 @@ function getProjectType(is_type) {
 
 // src/cli/funcs/deep-clone.js
 function deepClone(obj) {
-  if (obj === null || typeof obj !== "object") {
+  if (obj === null || typeof obj !== "object" || typeof obj === "function") {
     return obj;
   }
-  if (obj instanceof Function) {
-    return obj;
-  }
-  if (obj instanceof Array) {
-    const clonedArray = [];
-    for (let i = 0; i < obj.length; i++) {
-      clonedArray[i] = deepClone(obj[i]);
-    }
+  if (Array.isArray(obj)) {
+    const clonedArray = obj.map((e) => deepClone(e));
     return clonedArray;
   }
   const clonedObj = {};
   for (let key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      clonedObj[key] = deepClone(obj[key]);
-    }
+    clonedObj[key] = deepClone(obj[key]);
   }
   return clonedObj;
+}
+
+// src/cli/funcs/cssbeautify.js
+function cssbeautify(style = "", options = {
+  indent: "    ",
+  openbrace: "end-of-line",
+  autosemicolon: true
+}) {
+  let index = 0;
+  let length = style.length;
+  let blocks;
+  let formatted = "";
+  let ch;
+  let ch2;
+  let str;
+  let state;
+  let State;
+  let depth;
+  let quote;
+  let comment;
+  let openbracesuffix = true;
+  let autosemicolon = false;
+  let trimRight;
+  openbracesuffix = options.openbrace === "end-of-line";
+  autosemicolon = options.autosemicolon;
+  function isWhitespace(c) {
+    return c === " " || c === "\n" || c === "	" || c === "\r" || c === "\f";
+  }
+  function isQuote(c) {
+    return c === "'" || c === '"';
+  }
+  function isName(c) {
+    return ch >= "a" && ch <= "z" || ch >= "A" && ch <= "Z" || ch >= "0" && ch <= "9" || "-_*.:#[]".indexOf(c) >= 0;
+  }
+  function appendIndent() {
+    var i;
+    for (i = depth; i > 0; i -= 1) {
+      formatted += options.indent;
+    }
+  }
+  function openBlock() {
+    formatted = trimRight(formatted);
+    if (openbracesuffix) {
+      formatted += " {";
+    } else {
+      formatted += "\n";
+      appendIndent();
+      formatted += "{";
+    }
+    if (ch2 !== "\n") {
+      formatted += "\n";
+    }
+    depth += 1;
+  }
+  function closeBlock() {
+    var last;
+    depth -= 1;
+    formatted = trimRight(formatted);
+    if (formatted.length > 0 && autosemicolon) {
+      last = formatted.charAt(formatted.length - 1);
+      if (last !== ";" && last !== "{") {
+        formatted += ";";
+      }
+    }
+    formatted += "\n";
+    appendIndent();
+    formatted += "}";
+    blocks.push(formatted);
+    formatted = "";
+  }
+  if (String.prototype.trimRight) {
+    trimRight = function(s) {
+      return s.trimRight();
+    };
+  } else {
+    trimRight = function(s) {
+      return s.replace(/\s+$/, "");
+    };
+  }
+  State = {
+    Start: 0,
+    AtRule: 1,
+    Block: 2,
+    Selector: 3,
+    Ruleset: 4,
+    Property: 5,
+    Separator: 6,
+    Expression: 7,
+    URL: 8
+  };
+  depth = 0;
+  state = State.Start;
+  comment = false;
+  blocks = [];
+  style = style.replace(/\r\n/g, "\n");
+  while (index < length) {
+    ch = style.charAt(index);
+    ch2 = style.charAt(index + 1);
+    index += 1;
+    if (isQuote(quote)) {
+      formatted += ch;
+      if (ch === quote) {
+        quote = null;
+      }
+      if (ch === "\\" && ch2 === quote) {
+        formatted += ch2;
+        index += 1;
+      }
+      continue;
+    }
+    if (isQuote(ch)) {
+      formatted += ch;
+      quote = ch;
+      continue;
+    }
+    if (comment) {
+      formatted += ch;
+      if (ch === "*" && ch2 === "/") {
+        comment = false;
+        formatted += ch2;
+        index += 1;
+      }
+      continue;
+    }
+    if (ch === "/" && ch2 === "*") {
+      comment = true;
+      formatted += ch;
+      formatted += ch2;
+      index += 1;
+      continue;
+    }
+    if (state === State.Start) {
+      if (blocks.length === 0) {
+        if (isWhitespace(ch) && formatted.length === 0) {
+          continue;
+        }
+      }
+      if (ch <= " " || ch.charCodeAt(0) >= 128) {
+        state = State.Start;
+        formatted += ch;
+        continue;
+      }
+      if (isName(ch) || ch === "@") {
+        str = trimRight(formatted);
+        if (str.length === 0) {
+          if (blocks.length > 0) {
+            formatted = "\n\n";
+          }
+        } else {
+          if (str.charAt(str.length - 1) === "}" || str.charAt(str.length - 1) === ";") {
+            formatted = str + "\n\n";
+          } else {
+            while (true) {
+              ch2 = formatted.charAt(formatted.length - 1);
+              if (ch2 !== " " && ch2.charCodeAt(0) !== 9) {
+                break;
+              }
+              formatted = formatted.substr(
+                0,
+                formatted.length - 1
+              );
+            }
+          }
+        }
+        formatted += ch;
+        state = ch === "@" ? State.AtRule : State.Selector;
+        continue;
+      }
+    }
+    if (state === State.AtRule) {
+      if (ch === ";") {
+        formatted += ch;
+        state = State.Start;
+        continue;
+      }
+      if (ch === "{") {
+        str = trimRight(formatted);
+        openBlock();
+        state = str === "@font-face" ? State.Ruleset : State.Block;
+        continue;
+      }
+      formatted += ch;
+      continue;
+    }
+    if (state === State.Block) {
+      if (isName(ch)) {
+        str = trimRight(formatted);
+        if (str.length === 0) {
+          if (blocks.length > 0) {
+            formatted = "\n\n";
+          }
+        } else {
+          if (str.charAt(str.length - 1) === "}") {
+            formatted = str + "\n\n";
+          } else {
+            while (true) {
+              ch2 = formatted.charAt(formatted.length - 1);
+              if (ch2 !== " " && ch2.charCodeAt(0) !== 9) {
+                break;
+              }
+              formatted = formatted.substr(
+                0,
+                formatted.length - 1
+              );
+            }
+          }
+        }
+        appendIndent();
+        formatted += ch;
+        state = State.Selector;
+        continue;
+      }
+      if (ch === "}") {
+        closeBlock();
+        state = State.Start;
+        continue;
+      }
+      formatted += ch;
+      continue;
+    }
+    if (state === State.Selector) {
+      if (ch === "{") {
+        openBlock();
+        state = State.Ruleset;
+        continue;
+      }
+      if (ch === "}") {
+        closeBlock();
+        state = State.Start;
+        continue;
+      }
+      formatted += ch;
+      continue;
+    }
+    if (state === State.Ruleset) {
+      if (ch === "}") {
+        closeBlock();
+        state = State.Start;
+        if (depth > 0) {
+          state = State.Block;
+        }
+        continue;
+      }
+      if (ch === "\n") {
+        formatted = trimRight(formatted);
+        formatted += "\n";
+        continue;
+      }
+      if (!isWhitespace(ch)) {
+        formatted = trimRight(formatted);
+        formatted += "\n";
+        appendIndent();
+        formatted += ch;
+        state = State.Property;
+        continue;
+      }
+      formatted += ch;
+      continue;
+    }
+    if (state === State.Property) {
+      if (ch === ":") {
+        formatted = trimRight(formatted);
+        formatted += ": ";
+        state = State.Expression;
+        if (isWhitespace(ch2)) {
+          state = State.Separator;
+        }
+        continue;
+      }
+      if (ch === "}") {
+        closeBlock();
+        state = State.Start;
+        if (depth > 0) {
+          state = State.Block;
+        }
+        continue;
+      }
+      formatted += ch;
+      continue;
+    }
+    if (state === State.Separator) {
+      if (!isWhitespace(ch)) {
+        formatted += ch;
+        state = State.Expression;
+        continue;
+      }
+      if (isQuote(ch2)) {
+        state = State.Expression;
+      }
+      continue;
+    }
+    if (state === State.Expression) {
+      if (ch === "}") {
+        closeBlock();
+        state = State.Start;
+        if (depth > 0) {
+          state = State.Block;
+        }
+        continue;
+      }
+      if (ch === ";") {
+        formatted = trimRight(formatted);
+        formatted += ";\n";
+        state = State.Ruleset;
+        continue;
+      }
+      formatted += ch;
+      if (ch === "(") {
+        if (formatted.charAt(formatted.length - 2) === "l" && formatted.charAt(formatted.length - 3) === "r" && formatted.charAt(formatted.length - 4) === "u") {
+          state = State.URL;
+          continue;
+        }
+      }
+      continue;
+    }
+    if (state === State.URL) {
+      if (ch === ")" && formatted.charAt(formatted.length - 1 !== "\\")) {
+        formatted += ch;
+        state = State.Expression;
+        continue;
+      }
+    }
+    formatted += ch;
+  }
+  formatted = blocks.join("") + formatted;
+  return formatted;
 }
 
 // src/cli/index.js
 console.log("\n\n================BlickCss================\n\n");
 var dir = dirname(fileURLToPath(import.meta.url));
-var cwd = process.cwd();
 var req = createRequire(import.meta.url);
-var config_file_path = path2.resolve(
-  `blick.config.${getProjectType("module") ? "c" : ""}js`
+var cwd = process.cwd();
+var config_file_path = path.resolve(
+  `blick.config.${isModule() ? "c" : ""}js`
 );
-var defalut_config = fs2.readFileSync(dir + "/default-config.js", "utf-8");
 function getAttribute(token) {
   return this[token];
 }
@@ -1935,16 +2276,17 @@ function createAttrRegexp(attr) {
   );
 }
 async function main() {
-  if (!fs2.existsSync(config_file_path)) {
-    fs2.writeFileSync(config_file_path, defalut_config);
+  if (!fs.existsSync(config_file_path)) {
+    fs.writeFileSync(config_file_path, default_config_default);
   }
-  const store_copy = structuredClone(theme_default._STORE_);
+  const store_copy = deepClone(theme_default._STORE_);
   theme_default._STORE_ = store_copy;
   theme_default._COLOR_ = make_hex_default;
   theme_default._CLI_ = true;
   const blick_copy = deepClone(theme_default);
   let cli_config = {};
   let usr_config = {};
+  const filesText = {};
   const foo = () => {
     delete req.cache[config_file_path];
     theme_default.config({ ...blick_copy, ...req(config_file_path) });
@@ -1952,22 +2294,11 @@ async function main() {
   };
   foo();
   chokidar.watch(config_file_path).on("change", foo);
-  if (theme_default.server) {
-    liveServer.start({
-      port: theme_default.server?.port ?? 3500,
-      host: theme_default.server?.host ?? "0.0.0.0",
-      root: theme_default.server?.root ?? (fs2.existsSync(`${root}/src`) ? `${root}/src` : root),
-      open: theme_default.server?.open ?? true,
-      logLevel: theme_default.server?.logLevel ?? 0,
-      wait: theme_default.server?.wait ?? 0
-    });
-  }
-  const filesText = {};
   async function processHTMLFiles(updatedFile) {
-    theme_default._STORE_ = structuredClone(store_copy);
+    theme_default._STORE_ = deepClone(store_copy);
     const files = fg.sync(theme_default.input);
     for (const file of files) {
-      const html = fs2.readFileSync(file, "utf-8");
+      const html = fs.readFileSync(file, "utf-8");
       if (!file)
         return console.error("file error");
       const attrsValue = {};
@@ -1990,13 +2321,13 @@ async function main() {
     const NODES = Object.values(filesText);
     let css = render_default(null, { NODES });
     if (theme_default.beautify) {
-      css = unminifyCSS(css);
+      css = cssbeautify(css);
     }
     const outputDir = dirname(theme_default.output);
-    if (!fs2.existsSync(outputDir)) {
-      fs2.mkdirSync(outputDir, { recursive: true });
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
     }
-    fs2.writeFile(theme_default.output, css, (err) => {
+    fs.writeFile(theme_default.output, css, (err) => {
       if (err) {
         console.error(`Error writing file`, err);
       } else {

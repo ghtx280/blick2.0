@@ -886,6 +886,10 @@
     stretch: "align-items:stretch",
     grow: { _one: "flex-grow:1", _prop: "flex-grow:$" },
     shrink: { _one: "flex-shrink:1", _prop: "flex-shrink:$" },
+    start: "justify-content: flex-start",
+    end: "justify-content: flex-end",
+    top: "align-items: flex-start",
+    bottom: "align-items: flex-end",
     wrap: {
       _one: "flex-wrap:wrap",
       _prop: "flex-wrap:$",
@@ -1530,13 +1534,8 @@ ${aaa}}
       css_str += CSS[attr] + "\n";
     }
     return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
-  ${theme_default.reset || ""}
-  ${theme_default.root ? root2 : ""}
-  ${theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : ""}
-  ${theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : ""}
-  ${theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : ""}
-  ${css_str + media_str}
-  `;
+
+` + (theme_default.reset ? theme_default.reset : "") + (theme_default.reset ? theme_default.reset : "") + (theme_default.root ? root2 : "") + (theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : "") + (theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : "") + (theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : "") + css_str + media_str;
   }
 
   // src/funcs/prerender.js
