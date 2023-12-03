@@ -1,10 +1,13 @@
-import { B_CSS_STORE as CSS } from '../store';
-import BLICK from '../theme';
+// import { B_CSS_STORE as CSS } from '../store.js';
+import _STORE_ from '../store.js';
+import BLICK from '../theme/index.js';
 
 export default function (root) {
     let media_str = '';
     let css_str = '';
+    let CSS = BLICK._STORE_.B_CSS_STORE
 
+    
     for (const attr in CSS) {
         if (attr === 'MEDIA') {
             for (const md in CSS.MEDIA) {

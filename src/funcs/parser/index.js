@@ -1,10 +1,9 @@
-import BLICK from '../../theme';
-import _STORE_ from '../../store';
-import format from '../format-selector';
+import BLICK from '../../theme/index.js';
+import format from '../format-selector.js';
 
-import { parseStates } from './parse-states';
-import { parseStyles } from './parse-styles';
-import { is } from '../check-type';
+import { parseStates } from './parse-states.js';
+import { parseStyles } from './parse-styles.js';
+import { is } from '../check-type.js';
 
 export function parser(token = '', attr = 'class') {
     let [styles, ...states] = token.split(/(?<!\\):/g).reverse();

@@ -10,6 +10,11 @@ import colors from './colors.js';
 import font from './font.js';
 import reset from './reset.js';
 import * as funcs from './funcs.js';
+import { is } from '../funcs/check-type.js';
+import { parser } from '../funcs/parser/index.js';
+import _STORE_ from '../store.js';
+import B_STYLE_TAG from '../style-tag.js';
+import { createRule } from '../funcs/create-rule.js';
 
 const BLICK = {
     class: _class,
@@ -38,9 +43,23 @@ const BLICK = {
 
     beautifyOption: {},
 
-    version: '1.3.6',
+    version: '2.0.0',
+
+    is,
+    parser: parser,
+    _STORE_: _STORE_,
+    style_tag: B_STYLE_TAG,
+    createRule: createRule,
 
     ...funcs,
 };
+
+
+
+// BLICK.is = is;
+// BLICK.parser = parser;
+// BLICK._STORE_ = _STORE_;
+// BLICK.style_tag = B_STYLE_TAG;
+// BLICK.createRule = createRule;
 
 export default BLICK;

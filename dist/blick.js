@@ -39,10 +39,10 @@
     st: "stretch"
   };
   var classes = {
-    test: {
-      _prop: "baz: $1; foo: $2; ggg: $",
-      _unit: "px"
-    },
+    // test: {
+    //     _prop: 'baz: $1; foo: $2; ggg: $',
+    //     _unit: 'px',
+    // },
     // test2: {
     //   _one: () => "test-222"
     // },
@@ -962,7 +962,10 @@
       if (val.includes("/")) {
         let [v1, v2] = val.split("/");
         if (+v1[0]) {
-          return [{ _prop: `font-size:$;font-weight:${v2}`, _unit: "px" }, v1];
+          return [
+            { _prop: `font-size:$;font-weight:${v2}`, _unit: "px" },
+            v1
+          ];
         }
       } else {
         if (+val[0]) {
@@ -1109,7 +1112,8 @@
     num: (e) => typeof e === "number",
     arr: (e) => Array.isArray(e),
     var: (e) => /^\$.+/.test(e),
-    hex: (e) => /^#[\dabcdef]{3,8}$/.test(String(e).trim())
+    hex: (e) => /^#[\dabcdef]{3,8}$/.test(String(e).trim()),
+    exist: (e) => e !== void 0
   };
   var is = {
     ...TYPES,
@@ -1133,7 +1137,9 @@
   }
   function config(updates, source = this, isFirstCall = true) {
     if (!is.obj(updates)) {
-      throw new Error("Blick: The blick.config function must contain an object.");
+      throw new Error(
+        "Blick: The blick.config function must contain an object."
+      );
     }
     for (let key in updates) {
       if (is.obj(updates[key]) && updates[key] !== null && !Array.isArray(updates[key])) {
@@ -1189,102 +1195,13 @@ Available shades: ${Object.keys(colors_default[colorName]).filter(
     return shade;
   }
 
-  // src/theme/index.js
-  var BLICK = {
-    class: class_default,
-    screen: screen_default,
-    states: states_default,
-    colors: colors_default,
-    font: font_default,
-    reset: reset_default,
-    attr: {
-      flex: flex_default,
-      grid: grid_default,
-      text: text_default
-    },
-    autoTheme: false,
-    beautify: false,
-    autoFlex: true,
-    useAttr: true,
-    time: false,
-    root: true,
-    wrapper: ".wrapper",
-    maxPrefix: "m-",
-    beautifyOption: {},
-    version: "1.3.6",
-    ...funcs_exports
-  };
-  var theme_default = BLICK;
-
-  // src/store.js
-  var B_STYLE_STORE = /* @__PURE__ */ Object.create(null);
-  var B_ATTRS_STORE = /* @__PURE__ */ Object.create(null);
-  var B_MEDIA_STORE = /* @__PURE__ */ Object.create(null);
-  var B_CSS_STORE = /* @__PURE__ */ Object.create(null);
-  B_CSS_STORE.MEDIA = {};
-  var _STORE_ = {
-    B_STYLE_STORE,
-    B_ATTRS_STORE,
-    B_MEDIA_STORE,
-    B_CSS_STORE
-  };
-  var store_default = _STORE_;
-
-  // src/style-tag.js
-  var B_STYLE_TAG = {
-    textContent: ""
-  };
-  if (typeof window !== "undefined") {
-    B_STYLE_TAG = document.createElement("style");
-    B_STYLE_TAG.id = "BLICK_OUTPUT";
-    document.head.append(B_STYLE_TAG);
-  }
-  var style_tag_default = B_STYLE_TAG;
-
-  // src/funcs/create-root.js
-  function create_root_default() {
-    let fonts = "";
-    let colors = "";
-    for (const type in theme_default?.font) {
-      fonts += `--font-${type}:${theme_default.font[type]};`;
-    }
-    for (const color in theme_default?.colors) {
-      if (is.str(theme_default.colors[color])) {
-        colors += `--${color}:${theme_default.colors[color]};`;
-        continue;
-      }
-      for (const num in theme_default.colors[color]) {
-        colors += `--${color + (num === "def" ? "" : "-" + num)}:${theme_default.colors[color][num]};`;
-      }
-    }
-    return `:root{${colors + fonts}}`;
-  }
-
-  // src/funcs/create-css.js
-  function create_css_default(root2) {
-    let media_str = "";
-    let css_str = "";
-    for (const attr in B_CSS_STORE) {
-      if (attr === "MEDIA") {
-        for (const md in B_CSS_STORE.MEDIA) {
-          let aaa = "";
-          aaa += B_CSS_STORE.MEDIA[md];
-          media_str += `@media ${md} {
-${aaa}}
-`;
-        }
-        continue;
-      }
-      css_str += B_CSS_STORE[attr] + "\n";
-    }
-    return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
-  ${theme_default.reset || ""}
-  ${theme_default.root ? root2 : ""}
-  ${theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : ""}
-  ${theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : ""}
-  ${theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : ""}
-  ${css_str + media_str}
-  `;
+  // src/funcs/format-selector.js
+  function format_selector_default(str, model = "class") {
+    let format = str;
+    format = format.replace(/[^\w-_]/g, "\\$&").replace(/^\d/, "\\3$& ");
+    if (model === "raw")
+      return format;
+    return model === "class" ? `.${format}` : `[${model}~="${str}"]`;
   }
 
   // src/funcs/create-media-width.js
@@ -1297,7 +1214,6 @@ ${aaa}}
       if (!size)
         continue;
       size = size.toString().replace(/\(|\)/g, "");
-      console.log(index, size);
       if (+size[0]) {
         let type = +index === 0 ? "min" : "max";
         let unit = +size ? "px" : "";
@@ -1318,53 +1234,6 @@ ${aaa}}
       return createMediaWidth([null, theme_default.screen[str] || str]);
     }
     return createMediaWidth(theme_default.screen[str] || str);
-  }
-
-  // src/funcs/prerender.js
-  function prerender_default() {
-    if (!theme_default.dark) {
-      theme_default.dark = theme_default.states.dark("").trim();
-    }
-    if (theme_default.autoTheme && matchMedia("(prefers-color-scheme: dark)").matches) {
-      if (theme_default.dark.startsWith(".")) {
-        document.documentElement.classList.add(theme_default.dark.slice(1));
-      } else if (theme_default.dark.startsWith("#")) {
-        document.documentElement.id = theme_default.dark.slice(1);
-      } else if (theme_default.dark.startsWith("[") && theme_default.dark.endsWith("]")) {
-        document.documentElement.setAttribute(theme_default.dark.slice(1, -1));
-      }
-    }
-    if (theme_default.wrapper) {
-      for (const scr in theme_default.screen) {
-        let size = theme_default.screen[scr];
-        if (is.num(size)) {
-          B_CSS_STORE.MEDIA[parseMedia(scr)] = theme_default.wrapper + `{max-width:${size}px}`;
-        } else if (is.arr(size)) {
-          B_CSS_STORE.MEDIA[parseMedia(scr)] = theme_default.wrapper + `{max-width:${size[0]}px}`;
-        }
-      }
-    }
-  }
-
-  // src/funcs/timer.js
-  function timer(label) {
-    const startTime = performance.now();
-    return {
-      stop: function() {
-        const endTime = performance.now();
-        const elapsedTime = endTime - startTime;
-        console.log(`${label}: ${elapsedTime.toFixed(1)}ms`);
-      }
-    };
-  }
-
-  // src/funcs/format-selector.js
-  function format_selector_default(str, model = "class") {
-    let format = str;
-    format = format.replace(/[^\w-_]/g, "\\$&").replace(/^\d/, "\\3$& ");
-    if (model === "raw")
-      return format;
-    return model === "class" ? `.${format}` : `[${model}~="${str}"]`;
   }
 
   // src/funcs/parser/parse-states.js
@@ -1524,6 +1393,31 @@ ${aaa}}
     return null;
   }
 
+  // src/store.js
+  var B_STYLE_STORE = /* @__PURE__ */ Object.create(null);
+  var B_ATTRS_STORE = /* @__PURE__ */ Object.create(null);
+  var B_MEDIA_STORE = /* @__PURE__ */ Object.create(null);
+  var B_CSS_STORE = /* @__PURE__ */ Object.create(null);
+  B_CSS_STORE.MEDIA = {};
+  var _STORE_ = {
+    B_STYLE_STORE,
+    B_ATTRS_STORE,
+    B_MEDIA_STORE,
+    B_CSS_STORE
+  };
+  var store_default = _STORE_;
+
+  // src/style-tag.js
+  var B_STYLE_TAG = {
+    textContent: ""
+  };
+  if (typeof window !== "undefined") {
+    B_STYLE_TAG = document.createElement("style");
+    B_STYLE_TAG.id = "BLICK_OUTPUT";
+    document.head.append(B_STYLE_TAG);
+  }
+  var style_tag_default = B_STYLE_TAG;
+
   // src/funcs/create-rule.js
   function createRule(token, attr) {
     const STRUCT = parser(token, attr);
@@ -1566,6 +1460,121 @@ ${aaa}}
     return [MEDIA, `${STRUCT.selector}{${STYLE}}`];
   }
 
+  // src/theme/index.js
+  var BLICK = {
+    class: class_default,
+    screen: screen_default,
+    states: states_default,
+    colors: colors_default,
+    font: font_default,
+    reset: reset_default,
+    attr: {
+      flex: flex_default,
+      grid: grid_default,
+      text: text_default
+    },
+    autoTheme: false,
+    beautify: false,
+    autoFlex: true,
+    useAttr: true,
+    time: false,
+    root: true,
+    wrapper: ".wrapper",
+    maxPrefix: "m-",
+    beautifyOption: {},
+    version: "2.0.0",
+    is,
+    parser,
+    _STORE_: store_default,
+    style_tag: style_tag_default,
+    createRule,
+    ...funcs_exports
+  };
+  var theme_default = BLICK;
+
+  // src/funcs/create-root.js
+  function create_root_default() {
+    let fonts = "";
+    let colors = "";
+    for (const type in theme_default?.font) {
+      fonts += `--font-${type}:${theme_default.font[type]};`;
+    }
+    for (const color in theme_default?.colors) {
+      if (is.str(theme_default.colors[color])) {
+        colors += `--${color}:${theme_default.colors[color]};`;
+        continue;
+      }
+      for (const num in theme_default.colors[color]) {
+        colors += `--${color + (num === "def" ? "" : "-" + num)}:${theme_default.colors[color][num]};`;
+      }
+    }
+    return `:root{${colors + fonts}}`;
+  }
+
+  // src/funcs/create-css.js
+  function create_css_default(root2) {
+    let media_str = "";
+    let css_str = "";
+    let CSS = theme_default._STORE_.B_CSS_STORE;
+    for (const attr in CSS) {
+      if (attr === "MEDIA") {
+        for (const md in CSS.MEDIA) {
+          let aaa = "";
+          aaa += CSS.MEDIA[md];
+          media_str += `@media ${md} {
+${aaa}}
+`;
+        }
+        continue;
+      }
+      css_str += CSS[attr] + "\n";
+    }
+    return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
+  ${theme_default.reset || ""}
+  ${theme_default.root ? root2 : ""}
+  ${theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : ""}
+  ${theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : ""}
+  ${theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : ""}
+  ${css_str + media_str}
+  `;
+  }
+
+  // src/funcs/prerender.js
+  function prerender_default() {
+    if (!theme_default.dark) {
+      theme_default.dark = theme_default.states.dark("").trim();
+    }
+    if (typeof window !== void 0) {
+      if (theme_default.autoTheme && matchMedia("(prefers-color-scheme: dark)").matches) {
+        if (theme_default.dark.startsWith(".")) {
+          document.documentElement.classList.add(theme_default.dark.slice(1));
+        } else if (theme_default.dark.startsWith("#")) {
+          document.documentElement.id = theme_default.dark.slice(1);
+        } else if (theme_default.dark.startsWith("[") && theme_default.dark.endsWith("]")) {
+          document.documentElement.setAttribute(theme_default.dark.slice(1, -1));
+        }
+      }
+    }
+    if (theme_default.wrapper) {
+      for (const scr in theme_default.screen) {
+        let size = theme_default.screen[scr];
+        theme_default._STORE_.B_CSS_STORE.MEDIA[parseMedia(scr)] = theme_default.wrapper + `{max-width:${is.num(size) ? size : size[0]}px}`;
+      }
+    }
+  }
+
+  // src/funcs/timer.js
+  function timer(label) {
+    const startTime = performance.now();
+    return {
+      stop: function() {
+        const endTime = performance.now();
+        const elapsedTime = endTime - startTime;
+        console.log(`${label}: ${elapsedTime.toFixed(1)}ms`);
+      }
+    };
+  }
+
   // src/funcs/check-record.js
   var IGNORE = { STYLE: 1, SCRIPT: 1, HEAD: 1, HTML: 1 };
   var ATTRS = ["class", ...Object.keys(theme_default.attr)];
@@ -1601,17 +1610,18 @@ ${aaa}}
 
   // src/funcs/render.js
   var once;
-  var AS = B_ATTRS_STORE;
-  var SS = B_STYLE_STORE;
-  var MS = B_MEDIA_STORE;
-  var CSS = B_CSS_STORE;
-  function render_default(record) {
-    if (!checkRecord(record))
+  var root;
+  function render_default(record, params = {}) {
+    if (record && !checkRecord(record))
       return;
+    const AS = theme_default._STORE_.B_ATTRS_STORE;
+    const SS = theme_default._STORE_.B_STYLE_STORE;
+    const MS = theme_default._STORE_.B_MEDIA_STORE;
+    const CS = theme_default._STORE_.B_CSS_STORE;
     const TIMER = timer("Blick: Styles updated");
     const ATTRS2 = ["class", ...Object.keys(theme_default.attr)];
-    const NODES = document.querySelectorAll(ATTRS2.map((e) => `[${e}]`).join());
-    if (!once) {
+    const NODES = params.NODES || document.querySelectorAll(ATTRS2.map((e) => `[${e}]`).join());
+    if (!once || theme_default._CLI_) {
       root = create_root_default();
       prerender_default();
       once = true;
@@ -1619,12 +1629,14 @@ ${aaa}}
     let is_style_updated;
     NODES.forEach((node) => {
       for (const attr of ATTRS2) {
-        const ATTR_VALUE = node.getAttribute(attr);
+        let ATTR_VALUE = node.getAttribute(attr);
+        if (is.str(ATTR_VALUE))
+          ATTR_VALUE = ATTR_VALUE.trim();
         if (!ATTR_VALUE)
           continue;
         for (const token of ATTR_VALUE.trim().split(/\s+/g)) {
-          if (!(attr in CSS))
-            CSS[attr] = "";
+          if (!(attr in CS))
+            CS[attr] = "";
           if (!(attr in SS))
             SS[attr] = /* @__PURE__ */ Object.create(null);
           if (!(attr in AS))
@@ -1643,17 +1655,17 @@ ${aaa}}
             for (const m of MEDIA) {
               if (!(m.raw in MS))
                 MS[m.raw] = /* @__PURE__ */ Object.create(null);
-              if (!(m.val in CSS.MEDIA))
-                CSS.MEDIA[m.val] = "";
+              if (!(m.val in CS.MEDIA))
+                CS.MEDIA[m.val] = "";
               if (token in MS[m.raw])
                 continue;
               MS[m.raw][token] = RULE;
-              CSS.MEDIA[m.val] += RULE + "\n";
+              CS.MEDIA[m.val] += RULE + "\n";
             }
-            continue;
+          } else {
+            SS[attr][token] = RULE;
+            CS[attr] += RULE + "\n";
           }
-          SS[attr][token] = RULE;
-          CSS[attr] += RULE + "\n";
           is_style_updated = true;
         }
       }
@@ -1663,14 +1675,10 @@ ${aaa}}
       if (theme_default.time)
         TIMER.stop();
     }
+    return style_tag_default.textContent;
   }
 
-  // src/index.js
-  theme_default.is = is;
-  theme_default.parser = parser;
-  theme_default._STORE_ = store_default;
-  theme_default.style_tag = style_tag_default;
-  theme_default.createRule = createRule;
+  // src/main.js
   window.blick = theme_default;
   window.blickcss = theme_default;
   new MutationObserver(render_default).observe(document.documentElement, {

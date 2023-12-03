@@ -1,166 +1,170 @@
 #!/usr/bin/env node
 
-import fs from "fs";
-import color from "./funcs/make-hex.js";
-import chokidar from "chokidar";
-import { glob } from "glob";
-import beautify from "js-beautify";
-import liveServer from "live-server";
-import path, { dirname } from "path";
-import { fileURLToPath } from "url";
-import { createRequire } from "node:module";
+console.log('\n\n================BlickCss================\n\n');
 
-import BLICK  from "../theme";
-import B_RENDER from "../funcs/render.js";
-import * as _STORE_ from "../store.js";
-import defalut_config from "./default-config.js";
+import fs from 'fs';
+import chokidar from 'chokidar';
+import fg from 'fast-glob';
+// import liveServer from 'live-server';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { createRequire } from 'node:module';
 
-import { getRelPathSync } from "./funcs/rel-path.js";
-import { getProjectType } from "./funcs/proj-type.js";
+import BLICK  from '../theme/index.js';
+import RENDER from '../funcs/render.js';
+import COLOR  from './funcs/make-hex.js';
 
-const root = process.cwd();
-const requireSync = createRequire(import.meta.url);
+import { isModule  } from './funcs/is-module.js';
+import { deepClone } from './funcs/deep-clone.js';
+import { cssbeautify } from './funcs/cssbeautify.js';
+
+const dir = dirname(fileURLToPath(import.meta.url));
+const req = createRequire(import.meta.url);
+const cwd = process.cwd();
+
 const config_file_path = path.resolve(
-  `blick.config.${ getProjectType("module") ? "c" : "" }js`
-);
+    `blick.config.${isModule() ? 'c' : ''}js`
+)
 
+const defalut_config = fs.readFileSync(dir + '/default-config.js', 'utf-8');
 
-// let config = {
-//   input: "./src/**/*.{html,js}",
-//   output: "./src/output.css",
-//   beautify: true,
-//   watch: true,
-// };
+function getAttribute(token) {
+    return this[token];
+}
 
-(async function () {
+function unique(list) {
+    return Array.from(new Set(list));
+}
 
-  if (!config_file_path) {
-    fs.writeFileSync(config_file_path, defalut_config);
-  }
+function createAttrRegexp(attr) {
+    if (attr === 'class') attr = null;
 
-  const store_copy = { ..._STORE_ }
-  
+    return new RegExp(
+        `${attr || '(?:class|className)'}\\s*=\\s*(["'\`])(.*?)\\1`, 'g'
+    );
+}
 
-  blick._STORE_ = store_copy;
-  blick._COLOR_ = color;
-  blick._CLI_ = true;
-
-  const blick_copy = { ...blick };
-
-  let cli_config = {}
-  let usr_config = {}
-
-  const foo = () => {
-    delete requireSync.cache[config_file_path];
-    // config = {...config, ...requireSync(config_file_path)}
-    blick.config({...blick_copy, ...requireSync(config_file_path)});
-    processHTMLFiles();
-  }
-  foo()
-
-  chokidar.watch(config_file_path).on("change", foo);
-  
-  if (blick.server) {
-    liveServer.start({
-      port: blick.server?.port ?? 3500,
-      host: blick.server?.host ?? "0.0.0.0",
-      root: blick.server?.root ?? (fs.existsSync(`${root}/src`) ? `${root}/src` : root),
-      open: blick.server?.open ?? true,
-      logLevel: blick.server?.logLevel ?? 0,
-      wait: blick.server?.wait ?? 0,
-    });
-  }
-
-  const filesText = {};
-
-  async function processHTMLFiles(updatedFile) {
-    blick._STORE_ = structuredClone(store_copy);
-
-    const files = await glob(blick.input);
-
-    for (const file of files) {
-      const data = fs.readFileSync(file, "utf-8");
-
-      if (!file) return console.error("file error");
-
-      const unique = (e) => Array.from(new Set(e));
-
-      const attrsValue = {};
-
-      const f_regex_attr = (e) =>
-        new RegExp(
-          `\\s${blick.attr[e] || "(?:class|className)"}\\s*=\\s*["'\`](.*?)["'\`]`,
-          "g"
-        );
-
-      const regexParser = {
-        class: f_regex_attr("class"),
-        text: f_regex_attr("text"),
-        flex: f_regex_attr("flex"),
-        grid: f_regex_attr("grid"),
-      };
-
-      for (const attr in regexParser) {
-        const matches = data.matchAll(regexParser[attr]);
-        attrsValue[attr] = [];
-        for (const match of matches) {
-          const arrVals = match[1].trim().split(/\s+/g);
-          attrsValue[attr].push(...arrVals);
-        }
-        attrsValue[attr] = unique(attrsValue[attr]);
-      }
-      filesText[file] = attrsValue;
+async function main() {
+    if (!fs.existsSync(config_file_path)) {
+        fs.writeFileSync(config_file_path, defalut_config);
     }
 
-    const values = Object.values(filesText);
+    const store_copy = deepClone(BLICK._STORE_);
 
-    const all = {
-      class: [],
-      text: [],
-      flex: [],
-      grid: [],
+    BLICK._STORE_ = store_copy;
+    BLICK._COLOR_ = COLOR;
+    BLICK._CLI_ = true;
+
+    const blick_copy = deepClone(BLICK);
+
+    let cli_config = {};
+    let usr_config = {};
+
+    const filesText = {};
+
+    const foo = () => {
+        delete req.cache[config_file_path];
+        // config = {...config, ...requireSync(config_file_path)}
+        // BLICK.config(req(config_file_path));
+        BLICK.config({ ...blick_copy, ...req(config_file_path) });
+        processHTMLFiles();
     };
+    foo();
 
-    for (const item of values) {
-      for (const key in all) {
-        all[key].push(...item[key]);
-      }
+    chokidar.watch(config_file_path).on('change', foo);
+
+    // if (BLICK.server) {
+    //     liveServer.start({
+    //         port: BLICK.server?.port ?? 3500,
+    //         host: BLICK.server?.host ?? '0.0.0.0',
+    //         root:
+    //             BLICK.server?.root ??
+    //             (fs.existsSync(`${root}/src`) ? `${root}/src` : root),
+    //         open: BLICK.server?.open ?? true,
+    //         logLevel: BLICK.server?.logLevel ?? 0,
+    //         wait: BLICK.server?.wait ?? 0,
+    //     });
+    // }
+
+    
+
+    async function processHTMLFiles(updatedFile) {
+        BLICK._STORE_ = deepClone(store_copy);
+
+        const files = fg.sync(BLICK.input);
+
+        for (const file of files) {
+            const html = fs.readFileSync(file, 'utf-8');
+
+            if (!file) return console.error('file error');
+
+            const attrsValue = {};
+
+            const regexParser = {
+                class: createAttrRegexp(),
+            };
+
+            Object.keys(BLICK.attr).forEach((e) => {
+                regexParser[e] = createAttrRegexp(e);
+            });
+
+            for (const attr in regexParser) {
+                const matches = html.matchAll(regexParser[attr]);
+                // console.log(([...matches])[2]);
+                attrsValue[attr] = '';
+                for (const match of matches) {
+                    attrsValue[attr] += ' ' + match[2];
+                }
+            }
+            filesText[file] = attrsValue;
+            filesText[file].getAttribute = getAttribute;
+        }
+
+        const NODES = Object.values(filesText);
+
+        let css = RENDER(null, { NODES });
+
+        // console.log(BLICK._STORE_);
+        // console.log(_STORE_);
+        // console.log([css]);
+
+        if (BLICK.beautify) {
+            // css = beautify.css(css, BLICK.beautifyOptions || {});
+            css = cssbeautify(css);
+        }
+
+        const outputDir = dirname(BLICK.output);
+
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        fs.writeFile(BLICK.output, css, (err) => {
+            if (err) {
+                console.error(`Error writing file`, err);
+            } else {
+                
+                let upd_file_msg = '';
+
+                if (updatedFile) {
+                    let upd_text = updatedFile.replaceAll('\\', '/');
+                    upd_file_msg = `'${upd_text}' was changed.\n`;
+                }
+
+                let out_file_msg = BLICK.output.replaceAll(/\.+\//g, '');
+                let watch_msg = BLICK.watch ? '\nWaiting for change...' : '';
+                console.log(
+                    `\n${upd_file_msg}'${out_file_msg}' updated successfully. ${watch_msg}`
+                );
+            }
+        });
     }
 
-    let css = B_RENDER(all, { cli: true });
-
-    if (blick.beautify) {
-      css = beautify.css(css, {
-        indent_size: 2,
-      });
+    if (BLICK.watch) {
+        chokidar.watch(BLICK.input).on('change', (filePath) => {
+            processHTMLFiles(filePath);
+        });
     }
+}
 
-    const outputDir = dirname(blick.output);
-
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
-
-    fs.writeFile(blick.output, css, (err) => {
-      if (err) {
-        console.error(`Error writing file`, err);
-      } else {
-        console.log(
-          `\n${
-            updatedFile
-              ? `'${updatedFile.replaceAll("\\", "/")}' was changed.\n`
-              : ""
-          }'${blick.output.replaceAll(/\.+\//g, "")}' updated successfully. ${
-            blick.watch ? "\nWaiting for change..." : ""
-          }`
-        );
-      }
-    });
-  }
-
-  if (blick.watch) {
-    chokidar.watch(blick.input).on("change", (filePath) => {
-      processHTMLFiles(filePath);
-    });
-  }
-})();
+main();

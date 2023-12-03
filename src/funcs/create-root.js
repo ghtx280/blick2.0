@@ -1,5 +1,5 @@
-import BLICK from '../theme';
-import { is } from './check-type';
+import BLICK from '../theme/index.js';
+import { is } from './check-type.js';
 
 export default function () {
     let fonts = '';

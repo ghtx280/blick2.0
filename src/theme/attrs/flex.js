@@ -44,6 +44,12 @@ export default {
     stretch: 'align-items:stretch',
     grow: { _one: 'flex-grow:1', _prop: 'flex-grow:$' },
     shrink: { _one: 'flex-shrink:1', _prop: 'flex-shrink:$' },
+
+    start:  "justify-content: flex-start",
+    end:    "justify-content: flex-end",
+    top:    "align-items: flex-start",
+    bottom: "align-items: flex-end",
+
     wrap: {
         _one: 'flex-wrap:wrap',
         _prop: 'flex-wrap:$',

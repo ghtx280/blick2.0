@@ -1,14 +1,39 @@
 {
-  "version": "1.3.55",
+  "name": "blickcss2",
+  "version": "2.0.2",
+  "description": "A simple CSS library for styling web pages",
+  "directories": {
+    "doc": "docs"
+  },
+  "bin": {
+    "blick": "/dist/blick.node.js"
+  },
   "type": "module",
+  "scripts": {
+    "start-cli": "nodemon src/cli"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ghtx280/blickcss.git"
+  },
+  "keywords": [
+    "css",
+    "library",
+    "web",
+    "styling"
+  ],
+  "author": "ghtx280",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ghtx280/blickcss/issues"
+  },
+  "homepage": "https://blick.netlify.app/",
   "devDependencies": {
     "esbuild": "0.19.3"
   },
   "dependencies": {
     "chokidar": "^3.5.3",
-    "color": "^4.2.3",
-    "glob": "^10.3.10",
-    "js-beautify": "^1.14.9",
-    "live-server": "^1.2.2"
-  }
+    "fast-glob": "^3.3.2"
+  },
+  "unpkg": "/dist/blick.min.js"
 }

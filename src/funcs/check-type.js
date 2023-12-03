@@ -6,6 +6,7 @@ const TYPES = {
     arr:  (e) => Array.isArray(e),
     var:  (e) => /^\$.+/.test(e),
     hex:  (e) => /^#[\dabcdef]{3,8}$/.test(String(e).trim()),
+    exist: (e) => e !== undefined,
 };
 
 export const is = {

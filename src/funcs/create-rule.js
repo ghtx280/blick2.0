@@ -1,5 +1,5 @@
-import { is } from './check-type';
-import { parser } from './parser';
+import { is } from './check-type.js';
+import { parser } from './parser/index.js';
 
 export function createRule(token, attr) {
     const STRUCT = parser(token, attr);

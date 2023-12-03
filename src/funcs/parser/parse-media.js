@@ -1,5 +1,5 @@
-import BLICK from '../../theme';
-import { createMediaWidth } from '../create-media-width';
+import BLICK from '../../theme/index.js';
+import { createMediaWidth } from '../create-media-width.js';
 
 export function parseMedia(str) {
     if (!str) throw new Error(`value is required, (${str})`);

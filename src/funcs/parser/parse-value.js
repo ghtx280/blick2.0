@@ -1,6 +1,6 @@
-import BLICK from '../../theme';
-import { getHexAlpha, getVarColor, getHex } from '../../theme/funcs';
-import { is } from '../check-type';
+import BLICK from '../../theme/index.js';
+import { getHexAlpha, getVarColor, getHex } from '../../theme/funcs.js';
+import { is } from '../check-type.js';
 
 function createColor(color, opacity) {
     if (BLICK._COLOR_) {

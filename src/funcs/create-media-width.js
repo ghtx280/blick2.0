@@ -1,4 +1,4 @@
-import { is } from './check-type';
+import { is } from './check-type.js';
 
 export function createMediaWidth(sizes) {
     if (!is.obj(sizes)) sizes = [sizes];
@@ -11,7 +11,6 @@ export function createMediaWidth(sizes) {
         if (!size) continue;
 
         size = size.toString().replace(/\(|\)/g, '');
-        console.log(index, size);
 
         if (+size[0]) {
             let type = +index === 0 ? 'min' : 'max';

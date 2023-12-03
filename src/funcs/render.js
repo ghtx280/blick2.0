@@ -1,36 +1,39 @@
-import BLICK from '../theme';
-import B_STYLE_TAG from '../style-tag';
+import BLICK from '../theme/index.js';
+import B_STYLE_TAG from '../style-tag.js';
 
-import getRoot from './create-root';
-import createCss from './create-css';
-import prerender from './prerender';
+import getRoot from './create-root.js';
+import createCss from './create-css.js';
+import prerender from './prerender.js';
 
-import {
+import _STORE_, {
     B_STYLE_STORE,
     B_MEDIA_STORE,
     B_ATTRS_STORE,
     B_CSS_STORE,
-} from '../store';
+} from '../store.js';
 
-import { timer } from './timer';
-import { createRule } from './create-rule';
-import { checkRecord } from './check-record';
+import { timer } from './timer.js';
+import { createRule } from './create-rule.js';
+import { checkRecord } from './check-record.js';
+import { is } from './check-type.js';
 
 let once;
+let root;
 
-const AS = B_ATTRS_STORE;
-const SS = B_STYLE_STORE;
-const MS = B_MEDIA_STORE;
-const CSS = B_CSS_STORE;
-
-export default function (record) {
-    if (!checkRecord(record)) return;
-
+export default function (record, params = {}) {
+    
+    if (record && !checkRecord(record)) return;
+    
+    const AS = BLICK._STORE_.B_ATTRS_STORE;
+    const SS = BLICK._STORE_.B_STYLE_STORE;
+    const MS = BLICK._STORE_.B_MEDIA_STORE;
+    const CS = BLICK._STORE_.B_CSS_STORE;
+    
     const TIMER = timer('Blick: Styles updated');
     const ATTRS = ['class', ...Object.keys(BLICK.attr)];
-    const NODES = document.querySelectorAll(ATTRS.map((e) => `[${e}]`).join());
+    const NODES = params.NODES || document.querySelectorAll(ATTRS.map((e) => `[${e}]`).join());
 
-    if (!once) {
+    if (!once || BLICK._CLI_) {
         root = getRoot();
         prerender();
         once = true;
@@ -40,12 +43,14 @@ export default function (record) {
 
     NODES.forEach((node) => {
         for (const attr of ATTRS) {
-            const ATTR_VALUE = node.getAttribute(attr);
+            let ATTR_VALUE = node.getAttribute(attr);
+            
+            if (is.str(ATTR_VALUE)) ATTR_VALUE = ATTR_VALUE.trim();
 
             if (!ATTR_VALUE) continue;
 
             for (const token of ATTR_VALUE.trim().split(/\s+/g)) {
-                if (!(attr in CSS)) CSS[attr] = '';
+                if (!(attr in CS)) CS[attr] = '';
                 if (!(attr in SS)) SS[attr] = Object.create(null);
                 if (!(attr in AS)) AS[attr] = Object.create(null);
                 if (token in SS[attr]) continue;
@@ -63,17 +68,19 @@ export default function (record) {
                 if (MEDIA.length) {
                     for (const m of MEDIA) {
                         if (!(m.raw in MS)) MS[m.raw] = Object.create(null);
-                        if (!(m.val in CSS.MEDIA)) CSS.MEDIA[m.val] = '';
+                        if (!(m.val in CS.MEDIA)) CS.MEDIA[m.val] = '';
                         if (token in MS[m.raw]) continue;
 
                         MS[m.raw][token] = RULE;
-                        CSS.MEDIA[m.val] += RULE + '\n';
+                        CS.MEDIA[m.val] += RULE + '\n';
                     }
-                    continue;
                 }
+                else {
+                    SS[attr][token] = RULE;
+                    CS[attr] += RULE + '\n';
+                }
+               
 
-                SS[attr][token] = RULE;
-                CSS[attr] += RULE + '\n';
 
                 is_style_updated = true;
             }
@@ -84,4 +91,6 @@ export default function (record) {
         B_STYLE_TAG.textContent = createCss(root);
         if (BLICK.time) TIMER.stop(); // debugging the script execution time
     }
+
+    return B_STYLE_TAG.textContent;
 }

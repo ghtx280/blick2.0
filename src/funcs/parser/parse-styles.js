@@ -1,8 +1,8 @@
-import BLICK from '../../theme';
+import BLICK from '../../theme/index.js';
 
-import { parseRule } from './parse-rule';
-import { parseValue } from './parse-value';
-import { is } from '../check-type';
+import { parseRule } from './parse-rule.js';
+import { parseValue } from './parse-value.js';
+import { is } from '../check-type.js';
 
 export function parseStyles(style, attr) {
     let object = BLICK.attr[attr] || BLICK.class;

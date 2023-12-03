@@ -536,7 +536,7 @@ const classes = {
         _unit: 'px',
     },
     ratio: {
-        _prop: function (e) {
+        _prop: function(e) {
             return `aspect-ratio:${this._vals?.[e.rawVal] || e.rawVal}`;
         },
         _vals: {

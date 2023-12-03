@@ -1,7 +1,6 @@
-import _STORE_ from '../../store';
-import BLICK from '../../theme';
-import { is } from '../check-type';
-import { parseMedia } from './parse-media';
+import BLICK from '../../theme/index.js';
+import { is } from '../check-type.js';
+import { parseMedia } from './parse-media.js';
 
 export function parseStates(state, attr) {
     const IS_IN_ARR = state in BLICK.screen;

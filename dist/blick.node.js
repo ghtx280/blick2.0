@@ -41,7 +41,8 @@ var TYPES = {
   num: (e) => typeof e === "number",
   arr: (e) => Array.isArray(e),
   var: (e) => /^\$.+/.test(e),
-  hex: (e) => /^#[\dabcdef]{3,8}$/.test(String(e).trim())
+  hex: (e) => /^#[\dabcdef]{3,8}$/.test(String(e).trim()),
+  exist: (e) => e !== void 0
 };
 var is = {
   ...TYPES,
@@ -65,7 +66,9 @@ if (typeof window !== "undefined") {
 }
 function config(updates, source = this, isFirstCall = true) {
   if (!is.obj(updates)) {
-    throw new Error("Blick: The blick.config function must contain an object.");
+    throw new Error(
+      "Blick: The blick.config function must contain an object."
+    );
   }
   for (let key in updates) {
     if (is.obj(updates[key]) && updates[key] !== null && !Array.isArray(updates[key])) {
@@ -304,10 +307,11 @@ function make_hex_default(color, opacity) {
 
 // src/cli/index.js
 import chokidar from "chokidar";
-import { glob } from "glob";
+import fg from "fast-glob";
 import beautify from "js-beautify";
 import liveServer from "live-server";
 import path2, { dirname } from "path";
+import { fileURLToPath } from "url";
 import { createRequire } from "node:module";
 
 // src/theme/class.js
@@ -344,10 +348,10 @@ var i_vals = {
   st: "stretch"
 };
 var classes = {
-  test: {
-    _prop: "baz: $1; foo: $2; ggg: $",
-    _unit: "px"
-  },
+  // test: {
+  //     _prop: 'baz: $1; foo: $2; ggg: $',
+  //     _unit: 'px',
+  // },
   // test2: {
   //   _one: () => "test-222"
   // },
@@ -1267,7 +1271,10 @@ var text_default = {
     if (val.includes("/")) {
       let [v1, v2] = val.split("/");
       if (+v1[0]) {
-        return [{ _prop: `font-size:$;font-weight:${v2}`, _unit: "px" }, v1];
+        return [
+          { _prop: `font-size:$;font-weight:${v2}`, _unit: "px" },
+          v1
+        ];
       }
     } else {
       if (+val[0]) {
@@ -1381,110 +1388,13 @@ var font_default = {
 // src/theme/reset.js
 var reset_default = `*,::after,::before{box-sizing:border-box;object-fit:cover;-webkit-tap-highlight-color:transparent;font-feature-settings:"pnum" on,"lnum" on;outline:0;border:0;margin:0;padding:0;border-style:solid;color:inherit}h1,h2,h3,h4,h5,h6{font-size:var(--fsz);font-weight:700;line-height:1.2}h1{--fsz:2.5rem}h2{--fsz:2rem}h3{--fsz:1.75rem}h4{--fsz:1.5rem}h5{--fsz:1.25rem}h6{--fsz:1rem}a{text-decoration:none}hr{width:100%;margin:20px 0;border-top:1px solid #aaa}ul[role="list"],ol[role="list"]{list-style:none}html:focus-within{scroll-behavior:smooth}body{text-rendering:optimizeSpeed;font-family:var(--font-main)}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;vertical-align:middle}input,button,textarea,select{font:inherit}[hidden]{display:none}option{color:#000;background-color:#fff}.theme-dark{background-color:#222}.theme-dark *{color:#eee}`;
 
-// src/theme/index.js
-var BLICK = {
-  class: class_default,
-  screen: screen_default,
-  states: states_default,
-  colors: colors_default,
-  font: font_default,
-  reset: reset_default,
-  attr: {
-    flex: flex_default,
-    grid: grid_default,
-    text: text_default
-  },
-  autoTheme: false,
-  beautify: false,
-  autoFlex: true,
-  useAttr: true,
-  time: false,
-  root: true,
-  wrapper: ".wrapper",
-  maxPrefix: "m-",
-  beautifyOption: {},
-  version: "1.3.6",
-  ...funcs_exports
-};
-var theme_default = BLICK;
-
-// src/style-tag.js
-var B_STYLE_TAG = {
-  textContent: ""
-};
-if (typeof window !== "undefined") {
-  B_STYLE_TAG = document.createElement("style");
-  B_STYLE_TAG.id = "BLICK_OUTPUT";
-  document.head.append(B_STYLE_TAG);
-}
-var style_tag_default = B_STYLE_TAG;
-
-// src/funcs/create-root.js
-function create_root_default() {
-  let fonts = "";
-  let colors = "";
-  for (const type in theme_default?.font) {
-    fonts += `--font-${type}:${theme_default.font[type]};`;
-  }
-  for (const color in theme_default?.colors) {
-    if (is.str(theme_default.colors[color])) {
-      colors += `--${color}:${theme_default.colors[color]};`;
-      continue;
-    }
-    for (const num in theme_default.colors[color]) {
-      colors += `--${color + (num === "def" ? "" : "-" + num)}:${theme_default.colors[color][num]};`;
-    }
-  }
-  return `:root{${colors + fonts}}`;
-}
-
-// src/store.js
-var store_exports = {};
-__export(store_exports, {
-  B_ATTRS_STORE: () => B_ATTRS_STORE,
-  B_CSS_STORE: () => B_CSS_STORE,
-  B_MEDIA_STORE: () => B_MEDIA_STORE,
-  B_STYLE_STORE: () => B_STYLE_STORE,
-  default: () => store_default
-});
-var B_STYLE_STORE = /* @__PURE__ */ Object.create(null);
-var B_ATTRS_STORE = /* @__PURE__ */ Object.create(null);
-var B_MEDIA_STORE = /* @__PURE__ */ Object.create(null);
-var B_CSS_STORE = /* @__PURE__ */ Object.create(null);
-B_CSS_STORE.MEDIA = {};
-var _STORE_ = {
-  B_STYLE_STORE,
-  B_ATTRS_STORE,
-  B_MEDIA_STORE,
-  B_CSS_STORE
-};
-var store_default = _STORE_;
-
-// src/funcs/create-css.js
-function create_css_default(root3) {
-  let media_str = "";
-  let css_str = "";
-  for (const attr in B_CSS_STORE) {
-    if (attr === "MEDIA") {
-      for (const md in B_CSS_STORE.MEDIA) {
-        let aaa = "";
-        aaa += B_CSS_STORE.MEDIA[md];
-        media_str += `@media ${md} {
-${aaa}}
-`;
-      }
-      continue;
-    }
-    css_str += B_CSS_STORE[attr] + "\n";
-  }
-  return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
-  ${theme_default.reset || ""}
-  ${theme_default.root ? root3 : ""}
-  ${theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : ""}
-  ${theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : ""}
-  ${theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : ""}
-  ${css_str + media_str}
-  `;
+// src/funcs/format-selector.js
+function format_selector_default(str, model = "class") {
+  let format = str;
+  format = format.replace(/[^\w-_]/g, "\\$&").replace(/^\d/, "\\3$& ");
+  if (model === "raw")
+    return format;
+  return model === "class" ? `.${format}` : `[${model}~="${str}"]`;
 }
 
 // src/funcs/create-media-width.js
@@ -1497,7 +1407,6 @@ function createMediaWidth(sizes) {
     if (!size)
       continue;
     size = size.toString().replace(/\(|\)/g, "");
-    console.log(index, size);
     if (+size[0]) {
       let type = +index === 0 ? "min" : "max";
       let unit = +size ? "px" : "";
@@ -1518,53 +1427,6 @@ function parseMedia(str) {
     return createMediaWidth([null, theme_default.screen[str] || str]);
   }
   return createMediaWidth(theme_default.screen[str] || str);
-}
-
-// src/funcs/prerender.js
-function prerender_default() {
-  if (!theme_default.dark) {
-    theme_default.dark = theme_default.states.dark("").trim();
-  }
-  if (theme_default.autoTheme && matchMedia("(prefers-color-scheme: dark)").matches) {
-    if (theme_default.dark.startsWith(".")) {
-      document.documentElement.classList.add(theme_default.dark.slice(1));
-    } else if (theme_default.dark.startsWith("#")) {
-      document.documentElement.id = theme_default.dark.slice(1);
-    } else if (theme_default.dark.startsWith("[") && theme_default.dark.endsWith("]")) {
-      document.documentElement.setAttribute(theme_default.dark.slice(1, -1));
-    }
-  }
-  if (theme_default.wrapper) {
-    for (const scr in theme_default.screen) {
-      let size = theme_default.screen[scr];
-      if (is.num(size)) {
-        B_CSS_STORE.MEDIA[parseMedia(scr)] = theme_default.wrapper + `{max-width:${size}px}`;
-      } else if (is.arr(size)) {
-        B_CSS_STORE.MEDIA[parseMedia(scr)] = theme_default.wrapper + `{max-width:${size[0]}px}`;
-      }
-    }
-  }
-}
-
-// src/funcs/timer.js
-function timer(label) {
-  const startTime = performance.now();
-  return {
-    stop: function() {
-      const endTime = performance.now();
-      const elapsedTime = endTime - startTime;
-      console.log(`${label}: ${elapsedTime.toFixed(1)}ms`);
-    }
-  };
-}
-
-// src/funcs/format-selector.js
-function format_selector_default(str, model = "class") {
-  let format = str;
-  format = format.replace(/[^\w-_]/g, "\\$&").replace(/^\d/, "\\3$& ");
-  if (model === "raw")
-    return format;
-  return model === "class" ? `.${format}` : `[${model}~="${str}"]`;
 }
 
 // src/funcs/parser/parse-states.js
@@ -1724,6 +1586,31 @@ function parser(token = "", attr = "class") {
   return null;
 }
 
+// src/store.js
+var B_STYLE_STORE = /* @__PURE__ */ Object.create(null);
+var B_ATTRS_STORE = /* @__PURE__ */ Object.create(null);
+var B_MEDIA_STORE = /* @__PURE__ */ Object.create(null);
+var B_CSS_STORE = /* @__PURE__ */ Object.create(null);
+B_CSS_STORE.MEDIA = {};
+var _STORE_ = {
+  B_STYLE_STORE,
+  B_ATTRS_STORE,
+  B_MEDIA_STORE,
+  B_CSS_STORE
+};
+var store_default = _STORE_;
+
+// src/style-tag.js
+var B_STYLE_TAG = {
+  textContent: ""
+};
+if (typeof window !== "undefined") {
+  B_STYLE_TAG = document.createElement("style");
+  B_STYLE_TAG.id = "BLICK_OUTPUT";
+  document.head.append(B_STYLE_TAG);
+}
+var style_tag_default = B_STYLE_TAG;
+
 // src/funcs/create-rule.js
 function createRule(token, attr) {
   const STRUCT = parser(token, attr);
@@ -1766,6 +1653,121 @@ function createRule(token, attr) {
   return [MEDIA, `${STRUCT.selector}{${STYLE}}`];
 }
 
+// src/theme/index.js
+var BLICK = {
+  class: class_default,
+  screen: screen_default,
+  states: states_default,
+  colors: colors_default,
+  font: font_default,
+  reset: reset_default,
+  attr: {
+    flex: flex_default,
+    grid: grid_default,
+    text: text_default
+  },
+  autoTheme: false,
+  beautify: false,
+  autoFlex: true,
+  useAttr: true,
+  time: false,
+  root: true,
+  wrapper: ".wrapper",
+  maxPrefix: "m-",
+  beautifyOption: {},
+  version: "2.0.0",
+  is,
+  parser,
+  _STORE_: store_default,
+  style_tag: style_tag_default,
+  createRule,
+  ...funcs_exports
+};
+var theme_default = BLICK;
+
+// src/funcs/create-root.js
+function create_root_default() {
+  let fonts = "";
+  let colors = "";
+  for (const type in theme_default?.font) {
+    fonts += `--font-${type}:${theme_default.font[type]};`;
+  }
+  for (const color in theme_default?.colors) {
+    if (is.str(theme_default.colors[color])) {
+      colors += `--${color}:${theme_default.colors[color]};`;
+      continue;
+    }
+    for (const num in theme_default.colors[color]) {
+      colors += `--${color + (num === "def" ? "" : "-" + num)}:${theme_default.colors[color][num]};`;
+    }
+  }
+  return `:root{${colors + fonts}}`;
+}
+
+// src/funcs/create-css.js
+function create_css_default(root3) {
+  let media_str = "";
+  let css_str = "";
+  let CSS = theme_default._STORE_.B_CSS_STORE;
+  for (const attr in CSS) {
+    if (attr === "MEDIA") {
+      for (const md in CSS.MEDIA) {
+        let aaa = "";
+        aaa += CSS.MEDIA[md];
+        media_str += `@media ${md} {
+${aaa}}
+`;
+      }
+      continue;
+    }
+    css_str += CSS[attr] + "\n";
+  }
+  return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
+  ${theme_default.reset || ""}
+  ${theme_default.root ? root3 : ""}
+  ${theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : ""}
+  ${theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : ""}
+  ${theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : ""}
+  ${css_str + media_str}
+  `;
+}
+
+// src/funcs/prerender.js
+function prerender_default() {
+  if (!theme_default.dark) {
+    theme_default.dark = theme_default.states.dark("").trim();
+  }
+  if (typeof window !== void 0) {
+    if (theme_default.autoTheme && matchMedia("(prefers-color-scheme: dark)").matches) {
+      if (theme_default.dark.startsWith(".")) {
+        document.documentElement.classList.add(theme_default.dark.slice(1));
+      } else if (theme_default.dark.startsWith("#")) {
+        document.documentElement.id = theme_default.dark.slice(1);
+      } else if (theme_default.dark.startsWith("[") && theme_default.dark.endsWith("]")) {
+        document.documentElement.setAttribute(theme_default.dark.slice(1, -1));
+      }
+    }
+  }
+  if (theme_default.wrapper) {
+    for (const scr in theme_default.screen) {
+      let size = theme_default.screen[scr];
+      theme_default._STORE_.B_CSS_STORE.MEDIA[parseMedia(scr)] = theme_default.wrapper + `{max-width:${is.num(size) ? size : size[0]}px}`;
+    }
+  }
+}
+
+// src/funcs/timer.js
+function timer(label) {
+  const startTime = performance.now();
+  return {
+    stop: function() {
+      const endTime = performance.now();
+      const elapsedTime = endTime - startTime;
+      console.log(`${label}: ${elapsedTime.toFixed(1)}ms`);
+    }
+  };
+}
+
 // src/funcs/check-record.js
 var IGNORE = { STYLE: 1, SCRIPT: 1, HEAD: 1, HTML: 1 };
 var ATTRS = ["class", ...Object.keys(theme_default.attr)];
@@ -1801,30 +1803,33 @@ function checkRecord(rec = []) {
 
 // src/funcs/render.js
 var once;
-var AS = B_ATTRS_STORE;
-var SS = B_STYLE_STORE;
-var MS = B_MEDIA_STORE;
-var CSS = B_CSS_STORE;
-function render_default(record) {
-  if (!checkRecord(record))
+var root2;
+function render_default(record, params = {}) {
+  if (record && !checkRecord(record))
     return;
+  const AS = theme_default._STORE_.B_ATTRS_STORE;
+  const SS = theme_default._STORE_.B_STYLE_STORE;
+  const MS = theme_default._STORE_.B_MEDIA_STORE;
+  const CS = theme_default._STORE_.B_CSS_STORE;
   const TIMER = timer("Blick: Styles updated");
   const ATTRS2 = ["class", ...Object.keys(theme_default.attr)];
-  const NODES = document.querySelectorAll(ATTRS2.map((e) => `[${e}]`).join());
-  if (!once) {
-    root = create_root_default();
+  const NODES = params.NODES || document.querySelectorAll(ATTRS2.map((e) => `[${e}]`).join());
+  if (!once || theme_default._CLI_) {
+    root2 = create_root_default();
     prerender_default();
     once = true;
   }
   let is_style_updated;
   NODES.forEach((node) => {
     for (const attr of ATTRS2) {
-      const ATTR_VALUE = node.getAttribute(attr);
+      let ATTR_VALUE = node.getAttribute(attr);
+      if (is.str(ATTR_VALUE))
+        ATTR_VALUE = ATTR_VALUE.trim();
       if (!ATTR_VALUE)
         continue;
       for (const token of ATTR_VALUE.trim().split(/\s+/g)) {
-        if (!(attr in CSS))
-          CSS[attr] = "";
+        if (!(attr in CS))
+          CS[attr] = "";
         if (!(attr in SS))
           SS[attr] = /* @__PURE__ */ Object.create(null);
         if (!(attr in AS))
@@ -1843,44 +1848,28 @@ function render_default(record) {
           for (const m of MEDIA) {
             if (!(m.raw in MS))
               MS[m.raw] = /* @__PURE__ */ Object.create(null);
-            if (!(m.val in CSS.MEDIA))
-              CSS.MEDIA[m.val] = "";
+            if (!(m.val in CS.MEDIA))
+              CS.MEDIA[m.val] = "";
             if (token in MS[m.raw])
               continue;
             MS[m.raw][token] = RULE;
-            CSS.MEDIA[m.val] += RULE + "\n";
+            CS.MEDIA[m.val] += RULE + "\n";
           }
-          continue;
+        } else {
+          SS[attr][token] = RULE;
+          CS[attr] += RULE + "\n";
         }
-        SS[attr][token] = RULE;
-        CSS[attr] += RULE + "\n";
         is_style_updated = true;
       }
     }
   });
   if (is_style_updated) {
-    style_tag_default.textContent = create_css_default(root);
+    style_tag_default.textContent = create_css_default(root2);
     if (theme_default.time)
       TIMER.stop();
   }
+  return style_tag_default.textContent;
 }
-
-// src/cli/default-config.js
-var default_config_default = `module.exports = {
-  input: "./src/**/*.{html,js}", // Your input files by glob pattern
-  output: "./src/output.css",    // File in which css will be generated
-
-  // your configurations
-
-  beautify: true, // For beautify css code
-  watch: true, // For watching changing the input files and rebuilding
-
-  server: false,
-  // If you need a live preview server, uncomment the code below
-  // server: {
-  //   open: true
-  // }
-}`;
 
 // src/cli/funcs/proj-type.js
 import fs from "fs";
@@ -1901,108 +1890,135 @@ function getProjectType(is_type) {
   }
 }
 
+// src/cli/funcs/deep-clone.js
+function deepClone(obj) {
+  if (obj === null || typeof obj !== "object") {
+    return obj;
+  }
+  if (obj instanceof Function) {
+    return obj;
+  }
+  if (obj instanceof Array) {
+    const clonedArray = [];
+    for (let i = 0; i < obj.length; i++) {
+      clonedArray[i] = deepClone(obj[i]);
+    }
+    return clonedArray;
+  }
+  const clonedObj = {};
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      clonedObj[key] = deepClone(obj[key]);
+    }
+  }
+  return clonedObj;
+}
+
 // src/cli/index.js
-var root2 = process.cwd();
-var requireSync = createRequire(import.meta.url);
+console.log("\n\n================BlickCss================\n\n");
+var dir = dirname(fileURLToPath(import.meta.url));
+var cwd = process.cwd();
+var req = createRequire(import.meta.url);
 var config_file_path = path2.resolve(
   `blick.config.${getProjectType("module") ? "c" : ""}js`
 );
-(async function() {
-  if (!config_file_path) {
-    fs2.writeFileSync(config_file_path, default_config_default);
+var defalut_config = fs2.readFileSync(dir + "/default-config.js", "utf-8");
+function getAttribute(token) {
+  return this[token];
+}
+function createAttrRegexp(attr) {
+  if (attr === "class")
+    attr = null;
+  return new RegExp(
+    `${attr || "(?:class|className)"}\\s*=\\s*(["'\`])(.*?)\\1`,
+    "g"
+  );
+}
+async function main() {
+  if (!fs2.existsSync(config_file_path)) {
+    fs2.writeFileSync(config_file_path, defalut_config);
   }
-  const store_copy = { ...store_exports };
-  blick._STORE_ = store_copy;
-  blick._COLOR_ = make_hex_default;
-  blick._CLI_ = true;
-  const blick_copy = { ...blick };
+  const store_copy = structuredClone(theme_default._STORE_);
+  theme_default._STORE_ = store_copy;
+  theme_default._COLOR_ = make_hex_default;
+  theme_default._CLI_ = true;
+  const blick_copy = deepClone(theme_default);
   let cli_config = {};
   let usr_config = {};
   const foo = () => {
-    delete requireSync.cache[config_file_path];
-    blick.config({ ...blick_copy, ...requireSync(config_file_path) });
+    delete req.cache[config_file_path];
+    theme_default.config({ ...blick_copy, ...req(config_file_path) });
     processHTMLFiles();
   };
   foo();
   chokidar.watch(config_file_path).on("change", foo);
-  if (blick.server) {
+  if (theme_default.server) {
     liveServer.start({
-      port: blick.server?.port ?? 3500,
-      host: blick.server?.host ?? "0.0.0.0",
-      root: blick.server?.root ?? (fs2.existsSync(`${root2}/src`) ? `${root2}/src` : root2),
-      open: blick.server?.open ?? true,
-      logLevel: blick.server?.logLevel ?? 0,
-      wait: blick.server?.wait ?? 0
+      port: theme_default.server?.port ?? 3500,
+      host: theme_default.server?.host ?? "0.0.0.0",
+      root: theme_default.server?.root ?? (fs2.existsSync(`${root}/src`) ? `${root}/src` : root),
+      open: theme_default.server?.open ?? true,
+      logLevel: theme_default.server?.logLevel ?? 0,
+      wait: theme_default.server?.wait ?? 0
     });
   }
   const filesText = {};
   async function processHTMLFiles(updatedFile) {
-    blick._STORE_ = structuredClone(store_copy);
-    const files = await glob(blick.input);
+    theme_default._STORE_ = structuredClone(store_copy);
+    const files = fg.sync(theme_default.input);
     for (const file of files) {
-      const data = fs2.readFileSync(file, "utf-8");
+      const html = fs2.readFileSync(file, "utf-8");
       if (!file)
         return console.error("file error");
-      const unique = (e) => Array.from(new Set(e));
       const attrsValue = {};
-      const f_regex_attr = (e) => new RegExp(
-        `\\s${blick.attr[e] || "(?:class|className)"}\\s*=\\s*["'\`](.*?)["'\`]`,
-        "g"
-      );
       const regexParser = {
-        class: f_regex_attr("class"),
-        text: f_regex_attr("text"),
-        flex: f_regex_attr("flex"),
-        grid: f_regex_attr("grid")
+        class: createAttrRegexp()
       };
+      Object.keys(theme_default.attr).forEach((e) => {
+        regexParser[e] = createAttrRegexp(e);
+      });
       for (const attr in regexParser) {
-        const matches = data.matchAll(regexParser[attr]);
-        attrsValue[attr] = [];
+        const matches = html.matchAll(regexParser[attr]);
+        attrsValue[attr] = "";
         for (const match of matches) {
-          const arrVals = match[1].trim().split(/\s+/g);
-          attrsValue[attr].push(...arrVals);
+          attrsValue[attr] += " " + match[2];
         }
-        attrsValue[attr] = unique(attrsValue[attr]);
       }
       filesText[file] = attrsValue;
+      filesText[file].getAttribute = getAttribute;
     }
-    const values = Object.values(filesText);
-    const all = {
-      class: [],
-      text: [],
-      flex: [],
-      grid: []
-    };
-    for (const item of values) {
-      for (const key in all) {
-        all[key].push(...item[key]);
-      }
+    const NODES = Object.values(filesText);
+    let css = render_default(null, { NODES });
+    if (theme_default.beautify) {
+      css = unminifyCSS(css);
     }
-    let css = render_default(all, { cli: true });
-    if (blick.beautify) {
-      css = beautify.css(css, {
-        indent_size: 2
-      });
-    }
-    const outputDir = dirname(blick.output);
+    const outputDir = dirname(theme_default.output);
     if (!fs2.existsSync(outputDir)) {
       fs2.mkdirSync(outputDir, { recursive: true });
     }
-    fs2.writeFile(blick.output, css, (err) => {
+    fs2.writeFile(theme_default.output, css, (err) => {
       if (err) {
         console.error(`Error writing file`, err);
       } else {
+        let upd_file_msg = "";
+        if (updatedFile) {
+          let upd_text = updatedFile.replaceAll("\\", "/");
+          upd_file_msg = `'${upd_text}' was changed.
+`;
+        }
+        let out_file_msg = theme_default.output.replaceAll(/\.+\//g, "");
+        let watch_msg = theme_default.watch ? "\nWaiting for change..." : "";
         console.log(
           `
-${updatedFile ? `'${updatedFile.replaceAll("\\", "/")}' was changed.
-` : ""}'${blick.output.replaceAll(/\.+\//g, "")}' updated successfully. ${blick.watch ? "\nWaiting for change..." : ""}`
+${upd_file_msg}'${out_file_msg}' updated successfully. ${watch_msg}`
         );
       }
     });
   }
-  if (blick.watch) {
-    chokidar.watch(blick.input).on("change", (filePath) => {
+  if (theme_default.watch) {
+    chokidar.watch(theme_default.input).on("change", (filePath) => {
       processHTMLFiles(filePath);
     });
   }
-})();
+}
+main();

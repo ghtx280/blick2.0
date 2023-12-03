@@ -1,4 +1,4 @@
-import BLICK from '../theme';
+import BLICK from '../theme/index.js';
 
 const IGNORE = { STYLE: 1, SCRIPT: 1, HEAD: 1, HTML: 1 };
 const ATTRS = ['class', ...Object.keys(BLICK.attr)];
