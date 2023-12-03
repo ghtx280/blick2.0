@@ -1,10 +1,11 @@
 {
   "name": "blickcss2",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "A simple CSS library for styling web pages",
   "directories": {
     "doc": "docs"
   },
+  "main": "index.js",
   "bin": {
     "blick": "/dist/blick.node.js"
   },

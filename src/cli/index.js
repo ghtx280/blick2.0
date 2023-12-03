@@ -4,7 +4,7 @@ console.log('\n\n================BlickCss================\n\n');
 
 import fs from 'fs';
 import chokidar from 'chokidar';
-import fg from 'fast-glob';
+import fg, { async } from 'fast-glob';
 // import liveServer from 'live-server';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -25,8 +25,9 @@ const req = createRequire(import.meta.url);
 const cwd = process.cwd();
 
 const config_file_path = path.resolve(
-    `blick.config.${isModule() ? 'c' : ''}js`
+    `blick.config.${!isModule() ? 'm' : ''}js`
 )
+const config_file_path_rel = path.relative(dir, config_file_path);
 
 // const defalut_config = fs.readFileSync(dir + '/default-config.js', 'utf-8');
 
@@ -64,14 +65,18 @@ async function main() {
 
     const filesText = {};
 
-    const foo = () => {
-        delete req.cache[config_file_path];
+    const foo = async () => {
+        const user_config = await import(`./${config_file_path_rel}`)
+
+        theme_default.config({ ...blick_copy, ...user_config.default });
+
+        // delete req.cache[config_file_path];
         // config = {...config, ...requireSync(config_file_path)}
         // BLICK.config(req(config_file_path));
-        BLICK.config({ ...blick_copy, ...req(config_file_path) });
+        // BLICK.config({ ...blick_copy, ...req(config_file_path) });
         processHTMLFiles();
     };
-    foo();
+    await foo();
 
     chokidar.watch(config_file_path).on('change', foo);
 
