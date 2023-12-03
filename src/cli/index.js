@@ -4,7 +4,7 @@ console.log('\n\n================BlickCss================\n\n');
 
 import fs from 'fs';
 import chokidar from 'chokidar';
-import fg, { async } from 'fast-glob';
+import fg from 'fast-glob';
 // import liveServer from 'live-server';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -66,9 +66,10 @@ async function main() {
     const filesText = {};
 
     const foo = async () => {
-        const user_config = await import(`./${config_file_path_rel}`)
+        const path = `./${config_file_path_rel}`
+        const user_config = await import(path)
 
-        theme_default.config({ ...blick_copy, ...user_config.default });
+        BLICK.config({ ...blick_copy, ...user_config.default });
 
         // delete req.cache[config_file_path];
         // config = {...config, ...requireSync(config_file_path)}
