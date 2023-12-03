@@ -13,7 +13,7 @@ module.exports = {
     foo: "#37974c"
   },
 
-  // beautify: true, // For beautify css code
+  beautify: true, // For beautify css code
   watch: true, // For watching changing the input files and rebuilding
 
   server: false,
