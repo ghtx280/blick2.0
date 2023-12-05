@@ -9,17 +9,20 @@ import path     from 'path';
 import chokidar from 'chokidar';
 
 import BLICK  from '../theme/index.js';
-import RENDER from '../funcs/render.js';
+import RENDER from '../lib/render.js';
 import COLOR  from './funcs/make-hex.js';
 import CONFIG from './default-config.js';
 
 import { isModule      } from './funcs/is-module.js';
 import { deepClone     } from './funcs/deep-clone.js';
 import { cssbeautify   } from './funcs/cssbeautify.js';
+import { processFile   } from './funcs/process-file.js';
+import { showMsg       } from './funcs/show-msg.js';
 
-import { processFile } from './funcs/process-file.js';
-import { showMsg } from './funcs/show-msg.js';
-import { mkdirIfNotExist, writeFileIfNotExist } from './funcs/node-helpers.js';
+import {
+    mkdirIfNotExist,
+    writeFileIfNotExist
+} from './funcs/node-helpers.js';
 
 try {
     const DIR = path.dirname(url.fileURLToPath(import.meta.url));

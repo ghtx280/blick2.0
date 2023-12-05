@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// src/cli/index.js
+// src/node/index.js
 import fs3 from "fs";
 import fg from "fast-glob";
 import url from "url";
@@ -1101,7 +1101,7 @@ var font_default = {
 // src/theme/reset.js
 var reset_default = `*,::after,::before{box-sizing:border-box;object-fit:cover;-webkit-tap-highlight-color:transparent;font-feature-settings:"pnum" on,"lnum" on;outline:0;border:0;margin:0;padding:0;border-style:solid;color:inherit}h1,h2,h3,h4,h5,h6{font-size:var(--fsz);font-weight:700;line-height:1.2}h1{--fsz:2.5rem}h2{--fsz:2rem}h3{--fsz:1.75rem}h4{--fsz:1.5rem}h5{--fsz:1.25rem}h6{--fsz:1rem}a{text-decoration:none}hr{width:100%;margin:20px 0;border-top:1px solid #aaa}ul[role="list"],ol[role="list"]{list-style:none}html:focus-within{scroll-behavior:smooth}body{text-rendering:optimizeSpeed;font-family:var(--font-main)}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;vertical-align:middle}input,button,textarea,select{font:inherit}[hidden]{display:none}option{color:#000;background-color:#fff}.theme-dark{background-color:#222}.theme-dark *{color:#eee}`;
 
-// src/funcs/check-type.js
+// src/lib/check-type.js
 var TYPES = {
   func: (e) => typeof e === "function",
   str: (e) => typeof e === "string",
@@ -1198,7 +1198,7 @@ var funcs_default = {
   getHexAlpha
 };
 
-// src/funcs/format-selector.js
+// src/lib/format-selector.js
 function format_selector_default(str, model = "class") {
   let format = str;
   format = format.replace(/[^\w-_]/g, "\\$&").replace(/^\d/, "\\3$& ");
@@ -1207,7 +1207,7 @@ function format_selector_default(str, model = "class") {
   return model === "class" ? `.${format}` : `[${model}~="${str}"]`;
 }
 
-// src/funcs/create-media-width.js
+// src/lib/create-media-width.js
 function createMediaWidth(sizes) {
   if (!is.obj(sizes))
     sizes = [sizes];
@@ -1228,7 +1228,7 @@ function createMediaWidth(sizes) {
   return WIDTHS.join(" and ");
 }
 
-// src/funcs/parser/parse-media.js
+// src/lib/parser/parse-media.js
 function parseMedia(str) {
   if (!str)
     throw new Error(`value is required, (${str})`);
@@ -1239,7 +1239,7 @@ function parseMedia(str) {
   return createMediaWidth(theme_default.screen[str] || str);
 }
 
-// src/funcs/parser/parse-states.js
+// src/lib/parser/parse-states.js
 function parseStates(state, attr) {
   const IS_IN_ARR = state in theme_default.screen;
   const IS_MAX_WD = state.startsWith(theme_default.maxPrefix);
@@ -1264,7 +1264,7 @@ function parseStates(state, attr) {
   return { raw, val, type };
 }
 
-// src/funcs/parser/parse-rule.js
+// src/lib/parser/parse-rule.js
 function parseRule(path2, object) {
   const PARTS = path2.split(/(?<!\\)-/g);
   let array_path = [];
@@ -1286,7 +1286,7 @@ function parseRule(path2, object) {
   };
 }
 
-// src/funcs/parser/parse-value.js
+// src/lib/parser/parse-value.js
 function createColor(color, opacity) {
   if (theme_default._COLOR_) {
     return theme_default._COLOR_(color, opacity);
@@ -1341,7 +1341,7 @@ function parseValue(value = "", source = {}) {
   });
 }
 
-// src/funcs/parser/parse-styles.js
+// src/lib/parser/parse-styles.js
 function parseStyles(style, attr) {
   let object = theme_default.attr[attr] || theme_default.class;
   let property = null;
@@ -1375,7 +1375,7 @@ function parseStyles(style, attr) {
   };
 }
 
-// src/funcs/parser/index.js
+// src/lib/parser/index.js
 function parser(token = "", attr = "class") {
   let [styles, ...states] = token.split(/(?<!\\):/g).reverse();
   let selector = format_selector_default(token, attr);
@@ -1397,32 +1397,7 @@ function parser(token = "", attr = "class") {
   return null;
 }
 
-// src/store.js
-var B_STYLE_STORE = /* @__PURE__ */ Object.create(null);
-var B_ATTRS_STORE = /* @__PURE__ */ Object.create(null);
-var B_MEDIA_STORE = /* @__PURE__ */ Object.create(null);
-var B_CSS_STORE = /* @__PURE__ */ Object.create(null);
-B_CSS_STORE.MEDIA = {};
-var _STORE_ = {
-  B_STYLE_STORE,
-  B_ATTRS_STORE,
-  B_MEDIA_STORE,
-  B_CSS_STORE
-};
-var store_default = _STORE_;
-
-// src/style-tag.js
-var B_STYLE_TAG = {
-  textContent: ""
-};
-if (typeof window !== "undefined") {
-  B_STYLE_TAG = document.createElement("style");
-  B_STYLE_TAG.id = "BLICK_OUTPUT";
-  document.head.append(B_STYLE_TAG);
-}
-var style_tag_default = B_STYLE_TAG;
-
-// src/funcs/create-rule.js
+// src/lib/create-rule.js
 function createRule(token, attr) {
   const STRUCT = parser(token, attr);
   if (!STRUCT)
@@ -1464,6 +1439,31 @@ function createRule(token, attr) {
   return [MEDIA, `${STRUCT.selector}{${STYLE}}`];
 }
 
+// src/store.js
+var B_STYLE_STORE = /* @__PURE__ */ Object.create(null);
+var B_ATTRS_STORE = /* @__PURE__ */ Object.create(null);
+var B_MEDIA_STORE = /* @__PURE__ */ Object.create(null);
+var B_CSS_STORE = /* @__PURE__ */ Object.create(null);
+B_CSS_STORE.MEDIA = {};
+var _STORE_ = {
+  B_STYLE_STORE,
+  B_ATTRS_STORE,
+  B_MEDIA_STORE,
+  B_CSS_STORE
+};
+var store_default = _STORE_;
+
+// src/style-tag.js
+var B_STYLE_TAG = {
+  textContent: ""
+};
+if (typeof window !== "undefined") {
+  B_STYLE_TAG = document.createElement("style");
+  B_STYLE_TAG.id = "BLICK_OUTPUT";
+  document.head.append(B_STYLE_TAG);
+}
+var style_tag_default = B_STYLE_TAG;
+
 // version.js
 var version_default = "2.0";
 
@@ -1499,7 +1499,7 @@ var BLICK = {
 };
 var theme_default = BLICK;
 
-// src/funcs/create-root.js
+// src/lib/create-root.js
 function create_root_default() {
   let fonts = "";
   let colors = "";
@@ -1518,7 +1518,7 @@ function create_root_default() {
   return `:root{${colors + fonts}}`;
 }
 
-// src/funcs/create-css.js
+// src/lib/create-css.js
 function create_css_default(root2) {
   let media_str = "";
   let css_str = "";
@@ -1541,7 +1541,7 @@ ${aaa}}
 ` + (theme_default.reset ? theme_default.reset : "") + (theme_default.root ? root2 : "") + (theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : "") + (theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : "") + (theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : "") + css_str + media_str;
 }
 
-// src/funcs/prerender.js
+// src/lib/prerender.js
 function prerender_default() {
   if (!theme_default.dark) {
     theme_default.dark = theme_default.states.dark("").trim();
@@ -1565,7 +1565,7 @@ function prerender_default() {
   }
 }
 
-// src/funcs/timer.js
+// src/lib/timer.js
 function timer(label) {
   const startTime = performance.now();
   return {
@@ -1577,7 +1577,7 @@ function timer(label) {
   };
 }
 
-// src/funcs/helpers.js
+// src/lib/helpers.js
 function getTruthyKeys2(obj) {
   if (typeof obj !== "object") {
     return [];
@@ -1587,10 +1587,10 @@ function getTruthyKeys2(obj) {
   return filtered.map(([key, val]) => key);
 }
 
-// src/funcs/check-record.js
+// src/lib/check-record.js
 var ATTRS = ["class", ...getTruthyKeys2(theme_default.attr)];
 
-// src/funcs/render.js
+// src/lib/render.js
 var once;
 var root;
 function render_default(record, params = {}) {
@@ -1658,7 +1658,7 @@ function render_default(record, params = {}) {
   return style_tag_default.textContent;
 }
 
-// src/cli/funcs/make-hex.js
+// src/node/funcs/make-hex.js
 function make_hex_default(color, opacity) {
   const color_names = {
     aliceblue: "#f0f8ff",
@@ -1839,7 +1839,7 @@ function make_hex_default(color, opacity) {
   }
 }
 
-// src/cli/default-config.js
+// src/node/default-config.js
 var default_config_default = (
   /*js*/
   `
@@ -1865,7 +1865,7 @@ export default config({
 `
 );
 
-// src/cli/funcs/is-module.js
+// src/node/funcs/is-module.js
 import { readFileSync } from "fs";
 import { resolve } from "path";
 function isModule() {
@@ -1879,7 +1879,7 @@ function isModule() {
   }
 }
 
-// src/cli/funcs/deep-clone.js
+// src/node/funcs/deep-clone.js
 function deepClone(obj) {
   if (obj === null || typeof obj !== "object" || typeof obj === "function") {
     return obj;
@@ -1895,7 +1895,7 @@ function deepClone(obj) {
   return clonedObj;
 }
 
-// src/cli/funcs/cssbeautify.js
+// src/node/funcs/cssbeautify.js
 function cssbeautify(style = "", options = {
   indent: "    ",
   openbrace: "end-of-line",
@@ -2221,10 +2221,10 @@ function cssbeautify(style = "", options = {
   return formatted;
 }
 
-// src/cli/funcs/process-file.js
+// src/node/funcs/process-file.js
 import fs from "fs";
 
-// src/cli/funcs/create-attr-regexp.js
+// src/node/funcs/create-attr-regexp.js
 function createAttrRegexp(attr = "class") {
   attr = attr == "class" ? "(?:class|className)" : attr;
   const REGEXP = `${attr}\\s*=\\s*(["'\`])(.*?)\\1`;
@@ -2232,7 +2232,7 @@ function createAttrRegexp(attr = "class") {
   return new RegExp(REGEXP, FLAGS);
 }
 
-// src/cli/funcs/process-file.js
+// src/node/funcs/process-file.js
 function processFile(file, attrs) {
   const html = fs.readFileSync(file, "utf-8");
   if (!file) {
@@ -2252,7 +2252,7 @@ function processFile(file, attrs) {
   return NODE;
 }
 
-// src/cli/funcs/show-msg.js
+// src/node/funcs/show-msg.js
 var times = 1;
 function showMsg(file, params) {
   const STACK = [];
@@ -2282,7 +2282,7 @@ ${STACK.join("\n")}
 `);
 }
 
-// src/cli/funcs/node-helpers.js
+// src/node/funcs/node-helpers.js
 import fs2 from "fs";
 function mkdirIfNotExist(path2) {
   if (!fs2.existsSync(path2)) {
@@ -2299,7 +2299,7 @@ function writeFileIfNotExist(path2, content) {
   return false;
 }
 
-// src/cli/index.js
+// src/node/index.js
 console.log("\n================BlickCss================\n");
 try {
   const DIR = path.dirname(url.fileURLToPath(import.meta.url));

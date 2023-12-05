@@ -1,5 +1,5 @@
 import colors from './colors.js';
-import { is } from '../funcs/check-type.js';
+import { is } from '../lib/check-type.js';
 
 let canvas;
 let canvas_ctx;

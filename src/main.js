@@ -1,11 +1,11 @@
 import BLICK from './theme/index.js';
-import B_RENDER from './funcs/render.js';
+import B_RENDER from './lib/render.js';
 import B_STYLE_TAG from './style-tag.js';
 
-import { is } from './funcs/check-type.js';
-import { parser } from './funcs/parser/index.js';
-import { createRule } from './funcs/create-rule.js';
-import { getTruthyKeys } from './funcs/helpers.js';
+import { is } from './lib/check-type.js';
+import { parser } from './lib/parser/index.js';
+import { createRule } from './lib/create-rule.js';
+import { getTruthyKeys } from './lib/helpers.js';
 
 // BLICK.is = is;
 // BLICK.parser = parser;

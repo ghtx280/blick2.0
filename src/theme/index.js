@@ -7,14 +7,17 @@ import text from './attrs/text.js';
 import screen from './screen.js';
 import states from './states.js';
 import colors from './colors.js';
-import font from './font.js';
-import reset from './reset.js';
-import funcs from './funcs.js';
-import { is } from '../funcs/check-type.js';
-import { parser } from '../funcs/parser/index.js';
-import _STORE_ from '../store.js';
+import font   from './font.js';
+import reset  from './reset.js';
+import funcs  from './funcs.js';
+
+import { is         } from '../lib/check-type.js';
+import { parser     } from '../lib/parser/index.js';
+import { createRule } from '../lib/create-rule.js';
+
+import _STORE_     from '../store.js';
 import B_STYLE_TAG from '../style-tag.js';
-import { createRule } from '../funcs/create-rule.js';
+
 import version from '../../version.js';
 
 const BLICK = {
