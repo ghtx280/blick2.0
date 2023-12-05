@@ -1,10 +1,4 @@
 (() => {
-  var __defProp = Object.defineProperty;
-  var __export = (target, all) => {
-    for (var name in all)
-      __defProp(target, name, { get: all[name], enumerable: true });
-  };
-
   // src/theme/class.js
   var w_vals = {
     full: "100%",
@@ -1099,15 +1093,6 @@
   // src/theme/reset.js
   var reset_default = `*,::after,::before{box-sizing:border-box;object-fit:cover;-webkit-tap-highlight-color:transparent;font-feature-settings:"pnum" on,"lnum" on;outline:0;border:0;margin:0;padding:0;border-style:solid;color:inherit}h1,h2,h3,h4,h5,h6{font-size:var(--fsz);font-weight:700;line-height:1.2}h1{--fsz:2.5rem}h2{--fsz:2rem}h3{--fsz:1.75rem}h4{--fsz:1.5rem}h5{--fsz:1.25rem}h6{--fsz:1rem}a{text-decoration:none}hr{width:100%;margin:20px 0;border-top:1px solid #aaa}ul[role="list"],ol[role="list"]{list-style:none}html:focus-within{scroll-behavior:smooth}body{text-rendering:optimizeSpeed;font-family:var(--font-main)}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;vertical-align:middle}input,button,textarea,select{font:inherit}[hidden]{display:none}option{color:#000;background-color:#fff}.theme-dark{background-color:#222}.theme-dark *{color:#eee}`;
 
-  // src/theme/funcs.js
-  var funcs_exports = {};
-  __export(funcs_exports, {
-    config: () => config,
-    getHex: () => getHex,
-    getHexAlpha: () => getHexAlpha,
-    getVarColor: () => getVarColor
-  });
-
   // src/funcs/check-type.js
   var TYPES = {
     func: (e) => typeof e === "function",
@@ -1126,7 +1111,7 @@
         if (key in obj) {
           return (val) => !obj[key](val);
         } else {
-          throw new Error(`Blick: type '${key}' don't exist`);
+          throw new Error(`BlickCss: type '${key}' don't exist`);
         }
       }
     })
@@ -1198,6 +1183,12 @@ Available shades: ${Object.keys(colors_default[colorName]).filter(
     }
     return shade;
   }
+  var funcs_default = {
+    config,
+    getHex,
+    getVarColor,
+    getHexAlpha
+  };
 
   // src/funcs/format-selector.js
   function format_selector_default(str, model = "class") {
@@ -1361,8 +1352,9 @@ Available shades: ${Object.keys(colors_default[colorName]).filter(
     } else {
       property = source._one || source;
     }
-    if (!property)
+    if (!property || typeof property !== "string") {
       return null;
+    }
     return {
       src: source,
       path,
@@ -1464,6 +1456,9 @@ Available shades: ${Object.keys(colors_default[colorName]).filter(
     return [MEDIA, `${STRUCT.selector}{${STYLE}}`];
   }
 
+  // version.js
+  var version_default = "2.0";
+
   // src/theme/index.js
   var BLICK = {
     class: class_default,
@@ -1486,13 +1481,13 @@ Available shades: ${Object.keys(colors_default[colorName]).filter(
     wrapper: ".wrapper",
     maxPrefix: "m-",
     beautifyOption: {},
-    version: "2.0.0",
+    version: version_default,
     is,
     parser,
     _STORE_: store_default,
     style_tag: style_tag_default,
     createRule,
-    ...funcs_exports
+    ...funcs_default
   };
   var theme_default = BLICK;
 
@@ -1535,7 +1530,7 @@ ${aaa}}
     }
     return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
 
-` + (theme_default.reset ? theme_default.reset : "") + (theme_default.reset ? theme_default.reset : "") + (theme_default.root ? root2 : "") + (theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : "") + (theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : "") + (theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : "") + css_str + media_str;
+` + (theme_default.reset ? theme_default.reset : "") + (theme_default.root ? root2 : "") + (theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : "") + (theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : "") + (theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : "") + css_str + media_str;
   }
 
   // src/funcs/prerender.js
@@ -1574,51 +1569,29 @@ ${aaa}}
     };
   }
 
-  // src/funcs/check-record.js
-  var IGNORE = { STYLE: 1, SCRIPT: 1, HEAD: 1, HTML: 1 };
-  var ATTRS = ["class", ...Object.keys(theme_default.attr)];
-  function check(el = {}) {
-    if (!el.getAttribute)
-      return false;
-    if (el.nodeName in IGNORE)
-      return false;
-    if (!ATTRS.some((attr) => el.getAttribute(attr)))
-      return false;
-    return true;
-  }
-  function checkRecord(rec = []) {
-    if (!rec.length)
-      return false;
-    for (const r of rec) {
-      if (r.target.nodeName === "HTML" && r.addedNodes?.[0]?.nodeName === "BODY") {
-        return true;
-      }
-      if (!check(r.target)) {
-        continue;
-      }
-      if (!r.addedNodes.length) {
-        return true;
-      }
-      for (const n of r.addedNodes) {
-        if (check(n)) {
-          return true;
-        }
-      }
+  // src/funcs/helpers.js
+  function getTruthyKeys(obj) {
+    if (typeof obj !== "object") {
+      return [];
     }
+    const entries = Object.entries(obj);
+    const filtered = entries.filter(([key, val]) => val);
+    return filtered.map(([key, val]) => key);
   }
+
+  // src/funcs/check-record.js
+  var ATTRS = ["class", ...getTruthyKeys(theme_default.attr)];
 
   // src/funcs/render.js
   var once;
   var root;
   function render_default(record, params = {}) {
-    if (record && !checkRecord(record))
-      return;
     const AS = theme_default._STORE_.B_ATTRS_STORE;
     const SS = theme_default._STORE_.B_STYLE_STORE;
     const MS = theme_default._STORE_.B_MEDIA_STORE;
     const CS = theme_default._STORE_.B_CSS_STORE;
     const TIMER = timer("Blick: Styles updated");
-    const ATTRS2 = ["class", ...Object.keys(theme_default.attr)];
+    const ATTRS2 = ["class", ...getTruthyKeys(theme_default.attr)];
     const NODES = params.NODES || document.querySelectorAll(ATTRS2.map((e) => `[${e}]`).join());
     if (!once || theme_default._CLI_) {
       root = create_root_default();
@@ -1681,7 +1654,7 @@ ${aaa}}
   window.blick = theme_default;
   window.blickcss = theme_default;
   new MutationObserver(render_default).observe(document.documentElement, {
-    attributeFilter: ["class", ...Object.keys(theme_default.attr)],
+    attributeFilter: ["class", ...getTruthyKeys(theme_default.attr)],
     childList: true,
     attributes: true,
     subtree: true

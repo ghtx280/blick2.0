@@ -9,6 +9,8 @@ export function parseStyles(style, attr) {
     let property = null;
     let values = null;
 
+    
+
     let { source, path, value } = parseRule(style, object);
 
     if (!source && attr !== 'class') {
@@ -26,7 +28,9 @@ export function parseStyles(style, attr) {
         property = source._one || source;
     }
 
-    if (!property) return null;
+    if (!property || typeof property !== "string") {
+        return null;
+    }
 
     return {
         src: source,

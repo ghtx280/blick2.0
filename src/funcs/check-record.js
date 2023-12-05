@@ -1,7 +1,8 @@
 import BLICK from '../theme/index.js';
+import { getTruthyKeys } from './helpers.js';
 
 const IGNORE = { STYLE: 1, SCRIPT: 1, HEAD: 1, HTML: 1 };
-const ATTRS = ['class', ...Object.keys(BLICK.attr)];
+const ATTRS = ['class', ...getTruthyKeys(BLICK.attr)];
 
 function check(el = {}) {
     if (!el.getAttribute) return false;

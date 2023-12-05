@@ -22,7 +22,6 @@ export default function (root) {
     return (
         `/* ! blickcss v${BLICK.version} | MIT License | https://github.com/ghtx280/blickcss */\n\n`
         + (BLICK.reset ? BLICK.reset : '')
-        + (BLICK.reset ? BLICK.reset : '')
         + (BLICK.root  ? root : '')
         + (BLICK.wrapper
             ? `${BLICK.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}`

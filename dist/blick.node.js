@@ -1,17 +1,11 @@
 #!/usr/bin/env node
-var __defProp = Object.defineProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
 
 // src/cli/index.js
-import fs from "fs";
-import chokidar from "chokidar";
+import fs3 from "fs";
 import fg from "fast-glob";
-import path, { dirname } from "path";
-import { fileURLToPath } from "url";
-import { createRequire } from "node:module";
+import url from "url";
+import path from "path";
+import chokidar from "chokidar";
 
 // src/theme/class.js
 var w_vals = {
@@ -1107,15 +1101,6 @@ var font_default = {
 // src/theme/reset.js
 var reset_default = `*,::after,::before{box-sizing:border-box;object-fit:cover;-webkit-tap-highlight-color:transparent;font-feature-settings:"pnum" on,"lnum" on;outline:0;border:0;margin:0;padding:0;border-style:solid;color:inherit}h1,h2,h3,h4,h5,h6{font-size:var(--fsz);font-weight:700;line-height:1.2}h1{--fsz:2.5rem}h2{--fsz:2rem}h3{--fsz:1.75rem}h4{--fsz:1.5rem}h5{--fsz:1.25rem}h6{--fsz:1rem}a{text-decoration:none}hr{width:100%;margin:20px 0;border-top:1px solid #aaa}ul[role="list"],ol[role="list"]{list-style:none}html:focus-within{scroll-behavior:smooth}body{text-rendering:optimizeSpeed;font-family:var(--font-main)}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;vertical-align:middle}input,button,textarea,select{font:inherit}[hidden]{display:none}option{color:#000;background-color:#fff}.theme-dark{background-color:#222}.theme-dark *{color:#eee}`;
 
-// src/theme/funcs.js
-var funcs_exports = {};
-__export(funcs_exports, {
-  config: () => config,
-  getHex: () => getHex,
-  getHexAlpha: () => getHexAlpha,
-  getVarColor: () => getVarColor
-});
-
 // src/funcs/check-type.js
 var TYPES = {
   func: (e) => typeof e === "function",
@@ -1134,7 +1119,7 @@ var is = {
       if (key in obj) {
         return (val) => !obj[key](val);
       } else {
-        throw new Error(`Blick: type '${key}' don't exist`);
+        throw new Error(`BlickCss: type '${key}' don't exist`);
       }
     }
   })
@@ -1206,6 +1191,12 @@ function getHexAlpha(str) {
   }
   return shade;
 }
+var funcs_default = {
+  config,
+  getHex,
+  getVarColor,
+  getHexAlpha
+};
 
 // src/funcs/format-selector.js
 function format_selector_default(str, model = "class") {
@@ -1369,8 +1360,9 @@ function parseStyles(style, attr) {
   } else {
     property = source._one || source;
   }
-  if (!property)
+  if (!property || typeof property !== "string") {
     return null;
+  }
   return {
     src: source,
     path: path2,
@@ -1472,6 +1464,9 @@ function createRule(token, attr) {
   return [MEDIA, `${STRUCT.selector}{${STYLE}}`];
 }
 
+// version.js
+var version_default = "2.0";
+
 // src/theme/index.js
 var BLICK = {
   class: class_default,
@@ -1494,13 +1489,13 @@ var BLICK = {
   wrapper: ".wrapper",
   maxPrefix: "m-",
   beautifyOption: {},
-  version: "2.0.0",
+  version: version_default,
   is,
   parser,
   _STORE_: store_default,
   style_tag: style_tag_default,
   createRule,
-  ...funcs_exports
+  ...funcs_default
 };
 var theme_default = BLICK;
 
@@ -1543,7 +1538,7 @@ ${aaa}}
   }
   return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
 
-` + (theme_default.reset ? theme_default.reset : "") + (theme_default.reset ? theme_default.reset : "") + (theme_default.root ? root2 : "") + (theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : "") + (theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : "") + (theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : "") + css_str + media_str;
+` + (theme_default.reset ? theme_default.reset : "") + (theme_default.root ? root2 : "") + (theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : "") + (theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : "") + (theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : "") + css_str + media_str;
 }
 
 // src/funcs/prerender.js
@@ -1582,51 +1577,29 @@ function timer(label) {
   };
 }
 
-// src/funcs/check-record.js
-var IGNORE = { STYLE: 1, SCRIPT: 1, HEAD: 1, HTML: 1 };
-var ATTRS = ["class", ...Object.keys(theme_default.attr)];
-function check(el = {}) {
-  if (!el.getAttribute)
-    return false;
-  if (el.nodeName in IGNORE)
-    return false;
-  if (!ATTRS.some((attr) => el.getAttribute(attr)))
-    return false;
-  return true;
-}
-function checkRecord(rec = []) {
-  if (!rec.length)
-    return false;
-  for (const r of rec) {
-    if (r.target.nodeName === "HTML" && r.addedNodes?.[0]?.nodeName === "BODY") {
-      return true;
-    }
-    if (!check(r.target)) {
-      continue;
-    }
-    if (!r.addedNodes.length) {
-      return true;
-    }
-    for (const n of r.addedNodes) {
-      if (check(n)) {
-        return true;
-      }
-    }
+// src/funcs/helpers.js
+function getTruthyKeys2(obj) {
+  if (typeof obj !== "object") {
+    return [];
   }
+  const entries = Object.entries(obj);
+  const filtered = entries.filter(([key, val]) => val);
+  return filtered.map(([key, val]) => key);
 }
+
+// src/funcs/check-record.js
+var ATTRS = ["class", ...getTruthyKeys2(theme_default.attr)];
 
 // src/funcs/render.js
 var once;
 var root;
 function render_default(record, params = {}) {
-  if (record && !checkRecord(record))
-    return;
   const AS = theme_default._STORE_.B_ATTRS_STORE;
   const SS = theme_default._STORE_.B_STYLE_STORE;
   const MS = theme_default._STORE_.B_MEDIA_STORE;
   const CS = theme_default._STORE_.B_CSS_STORE;
   const TIMER = timer("Blick: Styles updated");
-  const ATTRS2 = ["class", ...Object.keys(theme_default.attr)];
+  const ATTRS2 = ["class", ...getTruthyKeys2(theme_default.attr)];
   const NODES = params.NODES || document.querySelectorAll(ATTRS2.map((e) => `[${e}]`).join());
   if (!once || theme_default._CLI_) {
     root = create_root_default();
@@ -1887,6 +1860,7 @@ export default config({
     // root: false,
     // wrapper: false,
     // autoFlex: false,
+    // useAttr: false,
 })
 `
 );
@@ -2247,102 +2221,134 @@ function cssbeautify(style = "", options = {
   return formatted;
 }
 
-// src/cli/index.js
-console.log("\n\n================BlickCss================\n\n");
-var dir = dirname(fileURLToPath(import.meta.url));
-var req = createRequire(import.meta.url);
-var cwd = process.cwd();
-var config_file_path = path.resolve(
-  `blick.config.${!isModule() ? "m" : ""}js`
-);
-var config_file_path_rel = path.relative(dir, config_file_path);
-function getAttribute(token) {
-  return this[token];
+// src/cli/funcs/process-file.js
+import fs from "fs";
+
+// src/cli/funcs/create-attr-regexp.js
+function createAttrRegexp(attr = "class") {
+  attr = attr == "class" ? "(?:class|className)" : attr;
+  const REGEXP = `${attr}\\s*=\\s*(["'\`])(.*?)\\1`;
+  const FLAGS = "g";
+  return new RegExp(REGEXP, FLAGS);
 }
-function createAttrRegexp(attr) {
-  if (attr === "class")
-    attr = null;
-  return new RegExp(
-    `${attr || "(?:class|className)"}\\s*=\\s*(["'\`])(.*?)\\1`,
-    "g"
-  );
-}
-async function main() {
-  if (!fs.existsSync(config_file_path)) {
-    fs.writeFileSync(config_file_path, default_config_default);
+
+// src/cli/funcs/process-file.js
+function processFile(file, attrs) {
+  const html = fs.readFileSync(file, "utf-8");
+  if (!file) {
+    return console.error("BlickCss: File error");
   }
-  const store_copy = deepClone(theme_default._STORE_);
-  theme_default._STORE_ = store_copy;
+  const NODE = {
+    getAttribute: function(token) {
+      return this[token];
+    }
+  };
+  for (const attr of attrs) {
+    const ATTR_REGEXP = createAttrRegexp(attr);
+    const MATCHES = html.matchAll(ATTR_REGEXP);
+    const MATCHES_ARR = [...MATCHES];
+    NODE[attr] = MATCHES_ARR.map((e) => e[2]).join(" ");
+  }
+  return NODE;
+}
+
+// src/cli/funcs/show-msg.js
+var times = 1;
+function showMsg(file, params) {
+  const STACK = [];
+  const date = /* @__PURE__ */ new Date();
+  let h = date.getHours();
+  let m = date.getMinutes();
+  let s = date.getSeconds();
+  h = h < 10 ? "0" + h : h;
+  m = m < 10 ? "0" + m : m;
+  s = s < 10 ? "0" + s : s;
+  STACK.push(`[${h}:${m}:${s}] Number of updates: ${times++}`);
+  STACK.push(`-------------------`);
+  if (file) {
+    let upd_file = file.replaceAll("\\", "/");
+    STACK.push(`'${upd_file}' was changed.`);
+  }
+  if (params.output) {
+    let out_file = params.output.replaceAll(/\.+\//g, "");
+    STACK.push(`'${out_file}' updated successfully.`);
+  }
+  STACK.push(`-------------------`);
+  if (params.watch) {
+    STACK.push(`Waiting for changes...`);
+  }
+  console.log(`
+${STACK.join("\n")}
+`);
+}
+
+// src/cli/funcs/node-helpers.js
+import fs2 from "fs";
+function mkdirIfNotExist(path2) {
+  if (!fs2.existsSync(path2)) {
+    fs2.mkdirSync(path2, { recursive: true });
+    return true;
+  }
+  return false;
+}
+function writeFileIfNotExist(path2, content) {
+  if (!fs2.existsSync(path2)) {
+    fs2.writeFileSync(path2, content);
+    return true;
+  }
+  return false;
+}
+
+// src/cli/index.js
+console.log("\n================BlickCss================\n");
+try {
+  const DIR = path.dirname(url.fileURLToPath(import.meta.url));
+  const CWD = process.cwd();
+  const CONFIG_FILE_NAME = `blick.config.${!isModule() ? "m" : ""}js`;
+  const CONFIG_FILE_PATH = path.resolve(CONFIG_FILE_NAME);
+  const CONFIG_FILE_PATH_REL = path.relative(DIR, CONFIG_FILE_PATH);
+  const STORE_COPY = deepClone(theme_default._STORE_);
+  const BLICK_COPY = deepClone(theme_default);
   theme_default._COLOR_ = make_hex_default;
   theme_default._CLI_ = true;
-  const blick_copy = deepClone(theme_default);
-  let cli_config = {};
-  let usr_config = {};
-  const filesText = {};
-  const foo = async () => {
-    const path2 = `./${config_file_path_rel}`;
-    const user_config = await import(path2);
-    theme_default.config({ ...blick_copy, ...user_config.default });
-    processHTMLFiles();
-  };
-  await foo();
-  chokidar.watch(config_file_path).on("change", foo);
-  async function processHTMLFiles(updatedFile) {
-    theme_default._STORE_ = deepClone(store_copy);
-    const files = fg.sync(theme_default.input);
-    for (const file of files) {
-      const html = fs.readFileSync(file, "utf-8");
-      if (!file)
-        return console.error("file error");
-      const attrsValue = {};
-      const regexParser = {
-        class: createAttrRegexp()
-      };
-      Object.keys(theme_default.attr).forEach((e) => {
-        regexParser[e] = createAttrRegexp(e);
-      });
-      for (const attr in regexParser) {
-        const matches = html.matchAll(regexParser[attr]);
-        attrsValue[attr] = "";
-        for (const match of matches) {
-          attrsValue[attr] += " " + match[2];
-        }
-      }
-      filesText[file] = attrsValue;
-      filesText[file].getAttribute = getAttribute;
+  async function filesUpdate(updatedFile) {
+    theme_default._STORE_ = deepClone(STORE_COPY);
+    const FILES = fg.sync(theme_default.input);
+    const ATTRS2 = ["class", ...getTruthyKeys(theme_default.attr)];
+    const NODES = [];
+    for (const file of FILES) {
+      NODES.push(processFile(file, ATTRS2));
     }
-    const NODES = Object.values(filesText);
-    let css = render_default(null, { NODES });
+    let CSS = render_default(null, { NODES });
     if (theme_default.beautify) {
-      css = cssbeautify(css);
+      CSS = cssbeautify(CSS);
     }
-    const outputDir = dirname(theme_default.output);
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
-    fs.writeFile(theme_default.output, css, (err) => {
+    mkdirIfNotExist(path.dirname(theme_default.output));
+    fs3.writeFile(theme_default.output, CSS, (err) => {
       if (err) {
-        console.error(`Error writing file`, err);
-      } else {
-        let upd_file_msg = "";
-        if (updatedFile) {
-          let upd_text = updatedFile.replaceAll("\\", "/");
-          upd_file_msg = `'${upd_text}' was changed.
-`;
-        }
-        let out_file_msg = theme_default.output.replaceAll(/\.+\//g, "");
-        let watch_msg = theme_default.watch ? "\nWaiting for change..." : "";
-        console.log(
-          `
-${upd_file_msg}'${out_file_msg}' updated successfully. ${watch_msg}`
-        );
+        return console.error(`BlickCss: Error writing file`, err);
       }
+      showMsg(updatedFile, theme_default);
     });
   }
-  if (theme_default.watch) {
-    chokidar.watch(theme_default.input).on("change", (filePath) => {
-      processHTMLFiles(filePath);
-    });
+  async function handleConfigUpdate() {
+    const PATH = `./${CONFIG_FILE_PATH_REL}?update=${Date.now()}`;
+    const CONFIG = await import(PATH);
+    theme_default.config({ ...BLICK_COPY, ...CONFIG.default });
+    filesUpdate();
   }
+  ;
+  async function main() {
+    writeFileIfNotExist(CONFIG_FILE_PATH, default_config_default);
+    await handleConfigUpdate();
+    chokidar.watch(CONFIG_FILE_PATH).on("change", handleConfigUpdate);
+    if (theme_default.watch) {
+      chokidar.watch(theme_default.input).on("change", (filePath) => {
+        filesUpdate(filePath);
+      });
+    }
+  }
+  main();
+} catch (error) {
+  console.log(error);
 }
-main();

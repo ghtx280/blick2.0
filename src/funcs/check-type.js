@@ -17,7 +17,7 @@ export const is = {
             if (key in obj) {
                 return (val) => !obj[key](val);
             } else {
-                throw new Error(`Blick: type '${key}' don't exist`);
+                throw new Error(`BlickCss: type '${key}' don't exist`);
             }
         },
     }),

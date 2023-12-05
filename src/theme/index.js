@@ -9,12 +9,13 @@ import states from './states.js';
 import colors from './colors.js';
 import font from './font.js';
 import reset from './reset.js';
-import * as funcs from './funcs.js';
+import funcs from './funcs.js';
 import { is } from '../funcs/check-type.js';
 import { parser } from '../funcs/parser/index.js';
 import _STORE_ from '../store.js';
 import B_STYLE_TAG from '../style-tag.js';
 import { createRule } from '../funcs/create-rule.js';
+import version from '../../version.js';
 
 const BLICK = {
     class: _class,
@@ -43,7 +44,7 @@ const BLICK = {
 
     beautifyOption: {},
 
-    version: '2.0.0',
+    version,
 
     is,
     parser: parser,
@@ -53,6 +54,8 @@ const BLICK = {
 
     ...funcs,
 };
+
+
 
 
 

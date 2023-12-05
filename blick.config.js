@@ -1,9 +1,9 @@
-export default /*js*/`
-import { config } from "blickcss2"
+
+import { config } from "./index.js"
 
 export default config({
     
-    input: './src/**/*.html', // Your input files by glob pattern
+    input: './src/**/test3.html', // Your input files by glob pattern
     output: './src/output.css', // File in which css will be generated
 
     // your configurations
@@ -12,10 +12,9 @@ export default config({
     watch: true, // For watching changing the input files and rebuilding
 
     // Uncomment the code below so that only your classes are created
-    // reset: false,
-    // root: false,
-    // wrapper: false,
-    // autoFlex: false,
-    // useAttr: false,
+    reset: false,
+    root: false,
+    wrapper: false,
+    autoFlex: false,
+    useAttr: false,
 })
-`

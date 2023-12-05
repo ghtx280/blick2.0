@@ -10,6 +10,7 @@ export function parser(token = '', attr = 'class') {
     let selector = format(token, attr);
     let rawSelector = selector;
 
+    
     states = states.map((e) => parseStates(e, attr));
     styles = styles.split(/(?<!\\);/g);
     styles = styles.map((e) => parseStyles(e, attr));

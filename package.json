@@ -1,17 +1,18 @@
 {
   "name": "blickcss2",
-  "version": "2.0.7",
+  "version": "2.0.14",
   "description": "A simple CSS library for styling web pages",
   "directories": {
     "doc": "docs"
   },
   "main": "index.js",
+  "types": "./types/index.d.ts",
   "bin": {
     "blick": "/dist/blick.node.js"
   },
   "type": "module",
   "scripts": {
-    "start-cli": "nodemon src/cli"
+    "start": "nodemon src/node"
   },
   "repository": {
     "type": "git",

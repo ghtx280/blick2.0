@@ -5,6 +5,7 @@ import B_STYLE_TAG from './style-tag.js';
 import { is } from './funcs/check-type.js';
 import { parser } from './funcs/parser/index.js';
 import { createRule } from './funcs/create-rule.js';
+import { getTruthyKeys } from './funcs/helpers.js';
 
 // BLICK.is = is;
 // BLICK.parser = parser;
@@ -16,7 +17,7 @@ window.blick = BLICK;
 window.blickcss = BLICK;
 
 new MutationObserver(B_RENDER).observe(document.documentElement, {
-    attributeFilter: ['class', ...Object.keys(BLICK.attr)],
+    attributeFilter: ['class', ...getTruthyKeys(BLICK.attr)],
     childList: true,
     attributes: true,
     subtree: true,

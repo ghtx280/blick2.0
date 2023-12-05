@@ -16,13 +16,14 @@ import { timer } from './timer.js';
 import { createRule } from './create-rule.js';
 import { checkRecord } from './check-record.js';
 import { is } from './check-type.js';
+import { getTruthyKeys } from './helpers.js';
 
 let once;
 let root;
 
 export default function (record, params = {}) {
-    
-    if (record && !checkRecord(record)) return;
+    // temporarily disabled
+    // if (record && !checkRecord(record)) return;
     
     const AS = BLICK._STORE_.B_ATTRS_STORE;
     const SS = BLICK._STORE_.B_STYLE_STORE;
@@ -30,7 +31,7 @@ export default function (record, params = {}) {
     const CS = BLICK._STORE_.B_CSS_STORE;
     
     const TIMER = timer('Blick: Styles updated');
-    const ATTRS = ['class', ...Object.keys(BLICK.attr)];
+    const ATTRS = ['class', ...getTruthyKeys(BLICK.attr)];
     const NODES = params.NODES || document.querySelectorAll(ATTRS.map((e) => `[${e}]`).join());
 
     if (!once || BLICK._CLI_) {

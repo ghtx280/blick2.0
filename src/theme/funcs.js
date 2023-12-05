@@ -82,3 +82,11 @@ export function getHexAlpha(str) {
     }
     return shade;
 }
+
+
+export default {
+    config,
+    getHex,
+    getVarColor,
+    getHexAlpha,
+}
