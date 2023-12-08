@@ -1,9 +1,8 @@
+import chalk from "chalk"
+
 let times = 1
 
-export function showMsg(file, params) {
-    // console.clear()
-    const STACK = []
-
+export function showMsg(file, params, time) {
     const date = new Date()
     let h = date.getHours()
     let m = date.getMinutes()
@@ -13,23 +12,27 @@ export function showMsg(file, params) {
     m = m < 10 ? "0" + m : m
     s = s < 10 ? "0" + s : s
 
-    STACK.push(`[${h}:${m}:${s}] Number of updates: ${times++}`)
-    STACK.push(`-------------------`)
+    console.log(
+        "\n\n",
+        chalk.yellow(`[${h}:${m}:${s}]`),
+        chalk.blue(`Updates: ${times++}, ${time}`),
+    )
+
+    console.log(`-------------------`)
 
     if (file) {
         let upd_file = file.replaceAll('\\', '/');
-        STACK.push(`'${upd_file}' was changed.`);
+        console.log(chalk.green.bold(`'${upd_file}' was changed.`));
     }
     if (params.output) {
         let out_file = params.output.replaceAll(/\.+\//g, '');
-        STACK.push(`'${out_file}' updated successfully.`)
+        console.log(chalk.green.bold(`'${out_file}' updated successfully.`))
     }
 
-    STACK.push(`-------------------`)
+    console.log(`-------------------`)
     
     if (params.watch) {
-        STACK.push(`Waiting for changes...`)
+        console.log(chalk.gray.bold(`Waiting for changes...`))
     }
-    
-    console.log(`\n${STACK.join("\n")}\n`);
+
 }

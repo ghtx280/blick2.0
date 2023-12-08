@@ -1,3 +1,5 @@
+import text_attr from "./attrs/text.js";
+
 const w_vals = {
     full: '100%',
     half: '50%',
@@ -32,25 +34,16 @@ const i_vals = {
 };
 
 const classes = {
-    // test: {
-    //     _prop: 'baz: $1; foo: $2; ggg: $',
-    //     _unit: 'px',
-    // },
-
-    // test2: {
-    //   _one: () => "test-222"
-    // },
-
     m: {
         _prop: 'margin:$',
         _unit: 'px',
     },
     my: {
-        _prop: 'margin-top:$;margin-bottom:$',
+        _prop: 'margin-top:$1;margin-bottom:$2',
         _unit: 'px',
     },
     mx: {
-        _prop: 'margin-left:$;margin-right:$',
+        _prop: 'margin-left:$1;margin-right:$2',
         _unit: 'px',
     },
     mt: {
@@ -83,11 +76,11 @@ const classes = {
         _unit: 'px',
     },
     py: {
-        _prop: 'padding-top:$;padding-bottom:$',
+        _prop: 'padding-top:$1;padding-bottom:$2',
         _unit: 'px',
     },
     px: {
-        _prop: 'padding-left:$;padding-right:$',
+        _prop: 'padding-left:$1;padding-right:$2',
         _unit: 'px',
     },
     pt: {
@@ -309,7 +302,7 @@ const classes = {
         _unit: 'px',
     },
     sq: {
-        _prop: 'width:$;height:$',
+        _prop: 'width:$1;height:$2',
         _vals: { full: '100%' },
         _unit: 'px',
     },
@@ -510,7 +503,7 @@ const classes = {
         },
     },
     cursor: {
-        _prop: 'cursor:$',
+        _prop: 'cursor:$', 
     },
     resize: {
         _prop: 'resize:$',
@@ -536,8 +529,10 @@ const classes = {
         _unit: 'px',
     },
     ratio: {
-        _prop: function(e) {
-            return `aspect-ratio:${this._vals?.[e.rawVal] || e.rawVal}`;
+        _prop({ src, rawVal, val }) {
+            return `aspect-ratio:${
+                +rawVal[0] ? rawVal.split("/").join(" / ") : val
+            }`;
         },
         _vals: {
             sqr: '1 / 1',
@@ -633,6 +628,8 @@ const classes = {
     fw: {
         _prop: 'font-weight:$',
     },
+    extrathin: 'font-weight:100',
+    thin: 'font-weight:200',
     light: 'font-weight:300',
     regular: 'font-weight:400',
     medium: 'font-weight:500',
@@ -689,12 +686,18 @@ const classes = {
     fullscreen: 'position:absolute;left:0;top:0;width:100%;height:100%',
     flex: {
         _one: 'display:flex',
-        _prop: 'flex:$',
+        _prop({ val, rawVal, src }) {
+            if (rawVal in src._vals) {
+                return "flex:" + val
+            }
+            return "gap:" + val;
+        },
         _vals: {
             1: '1 1 0%',
             auto: '1 1 auto',
             initial: '0 1 auto',
         },
+        _unit: 'px',
         center: 'justify-content:center;align-items:center',
         col: {
             _one: 'flex-direction:column',
@@ -705,14 +708,38 @@ const classes = {
             rev: 'flex-direction:row-reverse',
         },
         space: 'justify-content:space-between;align-items:center',
-        evenly: 'justify-content: space-evenly;align-items:center',
-        around: 'justify-content: space-around;align-items:center',
+        evenly: 'justify-content:space-evenly;align-items:center',
+        around: 'justify-content:space-around;align-items:center',
         wrap: {
             _one: 'flex-wrap:wrap',
             rev: 'flex-wrap:wrap-reverse',
         },
         nowrap: 'flex-wrap:nowrap',
         stretch: 'align-items:stretch',
+        start: {
+            _one: "justify-content:flex-start",
+            top: "justify-content:flex-start;align-items:flex-start",
+            center: "justify-content:flex-start;align-items:center",
+            bottom: "justify-content:flex-start;align-items:flex-end",
+        },
+        end: {
+            _one: "justify-content:flex-end",
+            top: "justify-content:flex-end;align-items:flex-start",
+            center: "justify-content:flex-end;align-items:center",
+            bottom: "justify-content:flex-end;align-items:flex-end",
+        },
+        top: {
+            _one:   "align-items:flex-start",
+            start: "justify-content:flex-start;align-items:flex-start",
+            center: "justify-content:center;align-items:flex-start",
+            end: "justify-content:flex-end;align-items:flex-start",
+        },
+        bottom: {
+            _one:   "align-items:flex-end",
+            start: "justify-content:flex-start;align-items:flex-end",
+            center: "justify-content:center;align-items:flex-end",
+            end: "justify-content:flex-end;align-items:flex-end",
+        },
     },
     col: {
         _one: 'flex-direction:column',
@@ -830,6 +857,33 @@ const classes = {
         _prop: 'stroke-width: $',
         _unit: 'px',
     },
+    text: {
+        _prop: function({rawVal}){
+           
+            let [v1, v2, v3] = rawVal.split('/');
+
+            if (+v1[0] && v3) {
+                    return {
+                        _prop: `font-size:$1;font-weight:$2;line-height:$3`,
+                        _values: [ v1, v2, v3 ]
+                    };
+            }
+            if (+v1[0] && v2) {
+                return {
+                    _prop: `font-size:$1;font-weight:$2`,
+                    _values: [ v1, v2 ]
+                };
+            }
+            if (+v1[0]) {
+                return 'font-size:$1'
+            }
+            
+    
+            return 'color:$'
+        },
+        _unit: ["px", "", "px"],
+        ...text_attr
+    }
 };
 
 classes.object = classes.fit;

@@ -1,10 +1,12 @@
-import BLICK from '../../theme/index.js';
+import context from '../../context.js';
 import { is } from '../check-type.js';
 import { parseMedia } from './parse-media.js';
 
 export function parseStates(state, attr) {
-    const IS_IN_ARR = state in BLICK.screen;
-    const IS_MAX_WD = state.startsWith(BLICK.maxPrefix);
+    const ctx = context.get()
+    
+    const IS_IN_ARR = state in ctx.screen;
+    const IS_MAX_WD = state.startsWith(ctx.maxPrefix);
     const IS_NUMBER = +state;
 
     let raw = state;
@@ -18,7 +20,7 @@ export function parseStates(state, attr) {
         if (raw.startsWith('&')) {
             val = raw.slice(1);
         } else {
-            val = BLICK.states[raw] || ':' + raw;
+            val = ctx.states[raw] || ':' + raw;
         }
         if (is.str(val)) {
             val = val.replace(/(?<!\\)_/g, ' ');

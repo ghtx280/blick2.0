@@ -1,11 +1,11 @@
-let B_STYLE_TAG = {
+let STYLE_TAG = {
     textContent: '',
 };
 
 if (typeof window !== 'undefined') {
-    B_STYLE_TAG = document.createElement('style');
-    B_STYLE_TAG.id = 'BLICK_OUTPUT';
-    document.head.append(B_STYLE_TAG);
+    STYLE_TAG = document.createElement('style');
+    STYLE_TAG.id = 'BLICK_OUTPUT';
+    document.head.append(STYLE_TAG);
 }
 
-export default B_STYLE_TAG;
+export default STYLE_TAG;

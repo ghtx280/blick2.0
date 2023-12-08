@@ -1,4 +1,5 @@
 import { getHexAlpha } from "../../theme/funcs.js";
+import { createError } from "./create-error.js";
 
 export default function(color, opacity) {
   
@@ -183,7 +184,8 @@ export default function(color, opacity) {
   }
   else {
     if (!color_names[color]) {
-      throw new SyntaxError(`Invalid color "${color}"`)
+      createError([['red',`Invalid color "${color}"`]])
+      return null
     }
     return color_names[color] + opacity
   }

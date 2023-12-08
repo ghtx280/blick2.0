@@ -1,22 +1,34 @@
 export default {
-    _else: function (val) {
-        if (val.includes('/')) {
-            let [v1, v2] = val.split('/');
+    _name: "text",
+    _else: function ({ style, states, token }) {
+        if (style.includes('/')) {
+            let [v1, v2, v3] = style.split('/');
+            if (+v1[0] && v3) {
+                return [
+                    {
+                        _prop: `font-size:$1;font-weight:$2;line-height:$3`,
+                        _unit: ['px', "", "px"]
+                    },
+                    [v1, v2, v3],
+                ];
+            }
             if (+v1[0]) {
                 return [
-                    { _prop: `font-size:$;font-weight:${v2}`, _unit: 'px' },
-                    v1,
+                    {
+                        _prop: `font-size:$;font-weight:${v2}`,
+                        _unit: 'px'
+                    },
+                    [v1],
                 ];
             }
         } else {
-            if (+val[0]) {
-                return [{ _prop: 'font-size:$', _unit: 'px' }];
+            if (+style[0]) {
+                return { _prop: 'font-size:$', _unit: 'px' }
             }
         }
 
-        return [{ _prop: 'color:$' }];
+        return 'color:$'
     },
-    nowrap: 'white-space: nowrap',
     100: 'font-weight:100',
     200: 'font-weight:200',
     300: 'font-weight:300',
@@ -26,7 +38,9 @@ export default {
     700: 'font-weight:700',
     800: 'font-weight:800',
     900: 'font-weight:900',
-
+    
+    nowrap: 'white-space: nowrap',
+    
     light:     'font-weight:300',
     regular:   'font-weight:400',
     medium:    'font-weight:500',

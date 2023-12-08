@@ -1,23 +1,25 @@
-import BLICK from '../theme/index.js';
+import context from '../context.js';
 import { is } from './check-type.js';
 
 export default function () {
+    const ctx = context.get()
+
     let fonts = '';
     let colors = '';
 
-    for (const type in BLICK?.font) {
-        fonts += `--font-${type}:${BLICK.font[type]};`;
+    for (const type in ctx?.font) {
+        fonts += `--font-${type}:${ctx.font[type]};`;
     }
 
-    for (const color in BLICK?.colors) {
-        if (is.str(BLICK.colors[color])) {
-            colors += `--${color}:${BLICK.colors[color]};`;
+    for (const color in ctx?.colors) {
+        if (is.str(ctx.colors[color])) {
+            colors += `--${color}:${ctx.colors[color]};`;
             continue;
         }
 
-        for (const num in BLICK.colors[color]) {
+        for (const num in ctx.colors[color]) {
             colors += `--${color + (num === 'def' ? '' : '-' + num)}:${
-                BLICK.colors[color][num]
+                ctx.colors[color][num]
             };`;
         }
     }

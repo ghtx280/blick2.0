@@ -1,12 +1,20 @@
-import BLICK from '../../theme/index.js';
+import context from '../../context.js';
 import { getHexAlpha, getVarColor, getHex } from '../../theme/funcs.js';
 import { is } from '../check-type.js';
 
 function createColor(color, opacity) {
-    if (BLICK._COLOR_) {
-        return BLICK._COLOR_(color, opacity);
+    const ctx = context.get()
+    
+    try {
+        if (ctx._COLOR_) {
+            return ctx._COLOR_(color, opacity);
+        }
+        return getHex(color) + getHexAlpha(opacity);
+    } catch (error) {
+        console.log(error + "");
+        return null
     }
-    return getHex(color) + getHexAlpha(opacity);
+    
 }
 
 function createVar(variable, opacity = '') {
@@ -26,7 +34,7 @@ function calcOpacity(number) {
     }
 }
 
-function getItem(item = '', source = {}) {
+function getItem(item = '', source = {}, index = 0) {
     const [first, second] = item.replaceAll('\\', '').split('/');
     const UNIT = source?._unit || '';
 
@@ -54,12 +62,16 @@ function getItem(item = '', source = {}) {
         return createVar(first);
     }
 
+    if (Array.isArray(UNIT)) {
+        return +item ? item + (UNIT[index] || "") : item;
+    }
+    
     return +item ? item + UNIT : item;
 }
 
 /*
   (num/num) 1/2 = 50%
-  (var/num) $foo/50 = foo in blick.colors ? getVarColor(foo) : var(-foo);opacity:0.5 
+  (var/num) $foo/50 = foo in blick.colors ? getVarColor(foo) : var(--foo);opacity:0.5 
   (str/num) red/50 = #ff000080
 
   (num) 15 = 15 + (unit || "")
@@ -69,12 +81,24 @@ function getItem(item = '', source = {}) {
 export function parseValue(value = '', source = {}) {
     if (!value) return null;
 
-    return value.split(/(?<!\\)\+/g).map((item) => {
+    if (!is.arr(value)) {
+        value = value.split(/(?<!\\)\+/g)
+    }
+    
+
+    let fff = value.map((item, index) => {
         return {
             val:
                 source._vals?.[item] ??
-                getItem(item, source).replace(/\\/g, ''),
+                getItem(item, source, index)?.replace(/\\/g, ''),
             raw: item,
         };
     });
+
+    if (fff.filter(e => e.val).length) {
+        return fff
+    }
+
+    return null
+    
 }

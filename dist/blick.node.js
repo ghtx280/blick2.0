@@ -1,11 +1,101 @@
 #!/usr/bin/env node
 
 // src/node/index.js
-import fs3 from "fs";
+import fs2 from "fs";
 import fg from "fast-glob";
 import url from "url";
 import path from "path";
 import chokidar from "chokidar";
+
+// src/theme/attrs/text.js
+var text_default = {
+  _name: "text",
+  _else: function({ style, states, token }) {
+    if (style.includes("/")) {
+      let [v1, v2, v3] = style.split("/");
+      if (+v1[0] && v3) {
+        return [
+          {
+            _prop: `font-size:$1;font-weight:$2;line-height:$3`,
+            _unit: ["px", "", "px"]
+          },
+          [v1, v2, v3]
+        ];
+      }
+      if (+v1[0]) {
+        return [
+          {
+            _prop: `font-size:$;font-weight:${v2}`,
+            _unit: "px"
+          },
+          [v1]
+        ];
+      }
+    } else {
+      if (+style[0]) {
+        return { _prop: "font-size:$", _unit: "px" };
+      }
+    }
+    return "color:$";
+  },
+  100: "font-weight:100",
+  200: "font-weight:200",
+  300: "font-weight:300",
+  400: "font-weight:400",
+  500: "font-weight:500",
+  600: "font-weight:600",
+  700: "font-weight:700",
+  800: "font-weight:800",
+  900: "font-weight:900",
+  nowrap: "white-space: nowrap",
+  light: "font-weight:300",
+  regular: "font-weight:400",
+  medium: "font-weight:500",
+  semibold: "font-weight:600",
+  bold: "font-weight:700",
+  extrabold: "font-weight:800",
+  tp: "color:transparent!important",
+  thin: "font-weight:lighter",
+  normal: "font-weight:normal",
+  bolder: "font-weight:bolder",
+  italic: "font-style: italic",
+  delete: "text-decoration-line:line-through",
+  line: "text-decoration-line:underline",
+  overline: "text-decoration-line:overline",
+  up: "text-transform:uppercase",
+  low: "text-transform:lowercase",
+  cap: "text-transform:capitalize",
+  center: "text-align:center",
+  left: "text-align:left",
+  right: "text-align:right",
+  justify: "text-align:justify",
+  mono: "font-family:var(--font-mono)",
+  serif: "font-family:var(--font-serif)",
+  sans: "font-family:var(--font-sans)",
+  vertical: "writing-mode:vertical-lr",
+  wrap: "word-wrap:break-word",
+  dots: "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%",
+  cols: { _prop: "columns:$", _unit: "" },
+  lh: { _prop: "line-height:$", _unit: "" },
+  wg: { _prop: "font-weight:$", _unit: "" },
+  font: { _prop: "font-family:$", _unit: "" },
+  align: { _prop: "vertical-align:$", _unit: "" },
+  space: { _prop: "white-space:$", _unit: "" },
+  shadow: {
+    _one: "text-shadow:3px 3px 2px #0000004d",
+    _prop: "text-shadow:$",
+    _unit: "px"
+  },
+  stroke: {
+    _prop: "-webkit-text-stroke:$",
+    _unit: "px"
+  },
+  break: {
+    _prop: "word-break:$",
+    _vals: { all: "break-all", keep: "keep-all" },
+    _unit: ""
+  }
+};
 
 // src/theme/class.js
 var w_vals = {
@@ -41,23 +131,16 @@ var i_vals = {
   st: "stretch"
 };
 var classes = {
-  // test: {
-  //     _prop: 'baz: $1; foo: $2; ggg: $',
-  //     _unit: 'px',
-  // },
-  // test2: {
-  //   _one: () => "test-222"
-  // },
   m: {
     _prop: "margin:$",
     _unit: "px"
   },
   my: {
-    _prop: "margin-top:$;margin-bottom:$",
+    _prop: "margin-top:$1;margin-bottom:$2",
     _unit: "px"
   },
   mx: {
-    _prop: "margin-left:$;margin-right:$",
+    _prop: "margin-left:$1;margin-right:$2",
     _unit: "px"
   },
   mt: {
@@ -90,11 +173,11 @@ var classes = {
     _unit: "px"
   },
   py: {
-    _prop: "padding-top:$;padding-bottom:$",
+    _prop: "padding-top:$1;padding-bottom:$2",
     _unit: "px"
   },
   px: {
-    _prop: "padding-left:$;padding-right:$",
+    _prop: "padding-left:$1;padding-right:$2",
     _unit: "px"
   },
   pt: {
@@ -316,7 +399,7 @@ var classes = {
     _unit: "px"
   },
   sq: {
-    _prop: "width:$;height:$",
+    _prop: "width:$1;height:$2",
     _vals: { full: "100%" },
     _unit: "px"
   },
@@ -543,8 +626,8 @@ var classes = {
     _unit: "px"
   },
   ratio: {
-    _prop: function(e) {
-      return `aspect-ratio:${this._vals?.[e.rawVal] || e.rawVal}`;
+    _prop({ src, rawVal, val }) {
+      return `aspect-ratio:${+rawVal[0] ? rawVal.split("/").join(" / ") : val}`;
     },
     _vals: {
       sqr: "1 / 1",
@@ -639,6 +722,8 @@ var classes = {
   fw: {
     _prop: "font-weight:$"
   },
+  extrathin: "font-weight:100",
+  thin: "font-weight:200",
   light: "font-weight:300",
   regular: "font-weight:400",
   medium: "font-weight:500",
@@ -695,12 +780,18 @@ var classes = {
   fullscreen: "position:absolute;left:0;top:0;width:100%;height:100%",
   flex: {
     _one: "display:flex",
-    _prop: "flex:$",
+    _prop({ val, rawVal, src }) {
+      if (rawVal in src._vals) {
+        return "flex:" + val;
+      }
+      return "gap:" + val;
+    },
     _vals: {
       1: "1 1 0%",
       auto: "1 1 auto",
       initial: "0 1 auto"
     },
+    _unit: "px",
     center: "justify-content:center;align-items:center",
     col: {
       _one: "flex-direction:column",
@@ -711,14 +802,38 @@ var classes = {
       rev: "flex-direction:row-reverse"
     },
     space: "justify-content:space-between;align-items:center",
-    evenly: "justify-content: space-evenly;align-items:center",
-    around: "justify-content: space-around;align-items:center",
+    evenly: "justify-content:space-evenly;align-items:center",
+    around: "justify-content:space-around;align-items:center",
     wrap: {
       _one: "flex-wrap:wrap",
       rev: "flex-wrap:wrap-reverse"
     },
     nowrap: "flex-wrap:nowrap",
-    stretch: "align-items:stretch"
+    stretch: "align-items:stretch",
+    start: {
+      _one: "justify-content:flex-start",
+      top: "justify-content:flex-start;align-items:flex-start",
+      center: "justify-content:flex-start;align-items:center",
+      bottom: "justify-content:flex-start;align-items:flex-end"
+    },
+    end: {
+      _one: "justify-content:flex-end",
+      top: "justify-content:flex-end;align-items:flex-start",
+      center: "justify-content:flex-end;align-items:center",
+      bottom: "justify-content:flex-end;align-items:flex-end"
+    },
+    top: {
+      _one: "align-items:flex-start",
+      start: "justify-content:flex-start;align-items:flex-start",
+      center: "justify-content:center;align-items:flex-start",
+      end: "justify-content:flex-end;align-items:flex-start"
+    },
+    bottom: {
+      _one: "align-items:flex-end",
+      start: "justify-content:flex-start;align-items:flex-end",
+      center: "justify-content:center;align-items:flex-end",
+      end: "justify-content:flex-end;align-items:flex-end"
+    }
   },
   col: {
     _one: "flex-direction:column",
@@ -835,6 +950,29 @@ var classes = {
   sw: {
     _prop: "stroke-width: $",
     _unit: "px"
+  },
+  text: {
+    _prop: function({ rawVal }) {
+      let [v1, v2, v3] = rawVal.split("/");
+      if (+v1[0] && v3) {
+        return {
+          _prop: `font-size:$1;font-weight:$2;line-height:$3`,
+          _values: [v1, v2, v3]
+        };
+      }
+      if (+v1[0] && v2) {
+        return {
+          _prop: `font-size:$1;font-weight:$2`,
+          _values: [v1, v2]
+        };
+      }
+      if (+v1[0]) {
+        return "font-size:$1";
+      }
+      return "color:$";
+    },
+    _unit: ["px", "", "px"],
+    ...text_default
   }
 };
 classes.object = classes.fit;
@@ -860,9 +998,11 @@ var i_vals2 = {
   st: "stretch"
 };
 var flex_default = {
-  _else: function(val) {
-    if (+val[0]) {
-      return [{ _prop: "gap:$", _unit: "px" }];
+  _name: "flex",
+  _using: "display:flex",
+  _else: function(e) {
+    if (!isNaN(+e.style[0])) {
+      return { _prop: "gap:$", _unit: "px" };
     }
   },
   col: {
@@ -933,8 +1073,10 @@ var i_vals3 = {
   st: "stretch"
 };
 var grid_default = {
-  _else: function(val) {
-    if (+val[0]) {
+  _name: "grid",
+  _using: "display:grid",
+  _else: function(e) {
+    if (+e.style[0]) {
       return [{ _prop: "gap:$", _unit: "px" }];
     }
   },
@@ -962,83 +1104,6 @@ var grid_default = {
   }
 };
 
-// src/theme/attrs/text.js
-var text_default = {
-  _else: function(val) {
-    if (val.includes("/")) {
-      let [v1, v2] = val.split("/");
-      if (+v1[0]) {
-        return [
-          { _prop: `font-size:$;font-weight:${v2}`, _unit: "px" },
-          v1
-        ];
-      }
-    } else {
-      if (+val[0]) {
-        return [{ _prop: "font-size:$", _unit: "px" }];
-      }
-    }
-    return [{ _prop: "color:$" }];
-  },
-  nowrap: "white-space: nowrap",
-  100: "font-weight:100",
-  200: "font-weight:200",
-  300: "font-weight:300",
-  400: "font-weight:400",
-  500: "font-weight:500",
-  600: "font-weight:600",
-  700: "font-weight:700",
-  800: "font-weight:800",
-  900: "font-weight:900",
-  light: "font-weight:300",
-  regular: "font-weight:400",
-  medium: "font-weight:500",
-  semibold: "font-weight:600",
-  bold: "font-weight:700",
-  extrabold: "font-weight:800",
-  tp: "color:transparent!important",
-  thin: "font-weight:lighter",
-  normal: "font-weight:normal",
-  bolder: "font-weight:bolder",
-  italic: "font-style: italic",
-  delete: "text-decoration-line:line-through",
-  line: "text-decoration-line:underline",
-  overline: "text-decoration-line:overline",
-  up: "text-transform:uppercase",
-  low: "text-transform:lowercase",
-  cap: "text-transform:capitalize",
-  center: "text-align:center",
-  left: "text-align:left",
-  right: "text-align:right",
-  justify: "text-align:justify",
-  mono: "font-family:var(--font-mono)",
-  serif: "font-family:var(--font-serif)",
-  sans: "font-family:var(--font-sans)",
-  vertical: "writing-mode:vertical-lr",
-  wrap: "word-wrap:break-word",
-  dots: "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%",
-  cols: { _prop: "columns:$", _unit: "" },
-  lh: { _prop: "line-height:$", _unit: "" },
-  wg: { _prop: "font-weight:$", _unit: "" },
-  font: { _prop: "font-family:$", _unit: "" },
-  align: { _prop: "vertical-align:$", _unit: "" },
-  space: { _prop: "white-space:$", _unit: "" },
-  shadow: {
-    _one: "text-shadow:3px 3px 2px #0000004d",
-    _prop: "text-shadow:$",
-    _unit: "px"
-  },
-  stroke: {
-    _prop: "-webkit-text-stroke:$",
-    _unit: "px"
-  },
-  break: {
-    _prop: "word-break:$",
-    _vals: { all: "break-all", keep: "keep-all" },
-    _unit: ""
-  }
-};
-
 // src/theme/screen.js
 var screen_default = {
   sm: 576,
@@ -1049,28 +1114,28 @@ var screen_default = {
 
 // src/theme/states.js
 var states_default = {
-  h: `:hover`,
-  f: `:focus`,
-  c: `:checked`,
-  a: `:active`,
-  first: `>*:first-child`,
-  last: `>*:last-child`,
-  odd: `>*:nth-child(odd)`,
-  even: `>*:nth-child(even)`,
-  ft: `>*:first-child`,
-  lt: `>*:last-child`,
-  od: `>*:nth-child(odd)`,
-  ev: `>*:nth-child(even)`,
-  all: ` *`,
-  "*": ` *`,
-  every: `>*`,
-  ">": `>*`,
-  bt: `>*+*`,
-  between: `>*+*`,
-  aft: `::after`,
-  bef: `::before`,
-  after: `::after`,
-  before: `::before`,
+  h: ":hover",
+  f: ":focus",
+  c: ":checked",
+  a: ":active",
+  first: ">*:first-child",
+  ft: ">*:first-child",
+  last: ">*:last-child",
+  lt: ">*:last-child",
+  odd: ">*:nth-child(odd)",
+  od: ">*:nth-child(odd)",
+  even: ">*:nth-child(even)",
+  ev: ">*:nth-child(even)",
+  all: " *",
+  "*": " *",
+  every: ">*",
+  ">": ">*",
+  between: ">*+*",
+  bt: ">*+*",
+  after: "::after",
+  aft: "::after",
+  before: "::before",
+  bef: "::before",
   dark: (selector) => `.dark ${selector}`
 };
 
@@ -1102,6 +1167,13 @@ var font_default = {
 var reset_default = `*,::after,::before{box-sizing:border-box;object-fit:cover;-webkit-tap-highlight-color:transparent;font-feature-settings:"pnum" on,"lnum" on;outline:0;border:0;margin:0;padding:0;border-style:solid;color:inherit}h1,h2,h3,h4,h5,h6{font-size:var(--fsz);font-weight:700;line-height:1.2}h1{--fsz:2.5rem}h2{--fsz:2rem}h3{--fsz:1.75rem}h4{--fsz:1.5rem}h5{--fsz:1.25rem}h6{--fsz:1rem}a{text-decoration:none}hr{width:100%;margin:20px 0;border-top:1px solid #aaa}ul[role="list"],ol[role="list"]{list-style:none}html:focus-within{scroll-behavior:smooth}body{text-rendering:optimizeSpeed;font-family:var(--font-main)}a:not([class]){text-decoration-skip-ink:auto}img,picture{max-width:100%;vertical-align:middle}input,button,textarea,select{font:inherit}[hidden]{display:none}option{color:#000;background-color:#fff}.theme-dark{background-color:#222}.theme-dark *{color:#eee}`;
 
 // src/lib/check-type.js
+function isElement(element) {
+  try {
+    return element instanceof Element || element instanceof HTMLElement || element.nodeName && element.nodeType && element.ownerDocument;
+  } catch (error) {
+    return false;
+  }
+}
 var TYPES = {
   func: (e) => typeof e === "function",
   str: (e) => typeof e === "string",
@@ -1110,19 +1182,22 @@ var TYPES = {
   arr: (e) => Array.isArray(e),
   var: (e) => /^\$.+/.test(e),
   hex: (e) => /^#[\dabcdef]{3,8}$/.test(String(e).trim()),
-  exist: (e) => e !== void 0
+  exist: (e) => e !== void 0,
+  null: (e) => e === null,
+  undef: (e) => e === void 0,
+  element: (e) => isElement(e)
 };
 var is = {
-  ...TYPES,
-  not: new Proxy(TYPES, {
-    get(obj, key) {
-      if (key in obj) {
-        return (val) => !obj[key](val);
-      } else {
-        throw new Error(`BlickCss: type '${key}' don't exist`);
-      }
-    }
-  })
+  ...TYPES
+  // not: new Proxy(TYPES, {
+  //     get(obj, key) {
+  //         if (key in obj) {
+  //             return (val) => !obj[key](val);
+  //         } else {
+  //             throw new Error(`BlickCss: type '${key}' don't exist`);
+  //         }
+  //     },
+  // }),
 };
 
 // src/theme/funcs.js
@@ -1132,18 +1207,23 @@ if (typeof window !== "undefined") {
   canvas = document.createElement("canvas");
   canvas_ctx = canvas.getContext("2d");
 }
-function config(updates, source = this, isFirstCall = true) {
+function config(updates = this, source = this, isFirstCall = true) {
+  if (updates === source)
+    return source;
   if (!is.obj(updates)) {
-    throw new Error(
+    console.error(
       "Blick: The blick.config function must contain an object."
     );
+    return;
   }
   for (let key in updates) {
-    if (is.obj(updates[key]) && updates[key] !== null && !Array.isArray(updates[key])) {
-      if (!source[key] || typeof source[key] == "string") {
+    if (is.null(updates[key]) || is.undef(updates[key])) {
+      delete source[key];
+    } else if (is.obj(updates[key]) && !is.arr(updates[key])) {
+      if (!source[key] || is.str(source[key])) {
         source[key] = {};
       }
-      this.config(updates[key], source[key], false);
+      config(updates[key], source[key], false);
     } else {
       source[key] = updates[key];
     }
@@ -1199,13 +1279,28 @@ var funcs_default = {
 };
 
 // src/lib/format-selector.js
-function format_selector_default(str, model = "class") {
-  let format = str;
+function format_selector_default(token, attr = "class") {
+  let format = token;
   format = format.replace(/[^\w-_]/g, "\\$&").replace(/^\d/, "\\3$& ");
-  if (model === "raw")
+  if (attr === "raw") {
     return format;
-  return model === "class" ? `.${format}` : `[${model}~="${str}"]`;
+  }
+  if (attr === "class") {
+    return `.${format}`;
+  }
+  return `[${attr}~="${token}"]`;
 }
+
+// src/context.js
+var context;
+var context_default = {
+  get() {
+    return context;
+  },
+  set(ctx2) {
+    return context = ctx2;
+  }
+};
 
 // src/lib/create-media-width.js
 function createMediaWidth(sizes) {
@@ -1230,19 +1325,21 @@ function createMediaWidth(sizes) {
 
 // src/lib/parser/parse-media.js
 function parseMedia(str) {
+  const ctx2 = context_default.get();
   if (!str)
     throw new Error(`value is required, (${str})`);
-  if (str.startsWith(theme_default.maxPrefix)) {
-    str = str.slice(theme_default.maxPrefix.length);
-    return createMediaWidth([null, theme_default.screen[str] || str]);
+  if (str.startsWith(ctx2.maxPrefix)) {
+    str = str.slice(ctx2.maxPrefix.length);
+    return createMediaWidth([null, ctx2.screen[str] || str]);
   }
-  return createMediaWidth(theme_default.screen[str] || str);
+  return createMediaWidth(ctx2.screen[str] || str);
 }
 
 // src/lib/parser/parse-states.js
 function parseStates(state, attr) {
-  const IS_IN_ARR = state in theme_default.screen;
-  const IS_MAX_WD = state.startsWith(theme_default.maxPrefix);
+  const ctx2 = context_default.get();
+  const IS_IN_ARR = state in ctx2.screen;
+  const IS_MAX_WD = state.startsWith(ctx2.maxPrefix);
   const IS_NUMBER = +state;
   let raw = state;
   let val = null;
@@ -1254,7 +1351,7 @@ function parseStates(state, attr) {
     if (raw.startsWith("&")) {
       val = raw.slice(1);
     } else {
-      val = theme_default.states[raw] || ":" + raw;
+      val = ctx2.states[raw] || ":" + raw;
     }
     if (is.str(val)) {
       val = val.replace(/(?<!\\)_/g, " ");
@@ -1288,10 +1385,16 @@ function parseRule(path2, object) {
 
 // src/lib/parser/parse-value.js
 function createColor(color, opacity) {
-  if (theme_default._COLOR_) {
-    return theme_default._COLOR_(color, opacity);
+  const ctx2 = context_default.get();
+  try {
+    if (ctx2._COLOR_) {
+      return ctx2._COLOR_(color, opacity);
+    }
+    return getHex(color) + getHexAlpha(opacity);
+  } catch (error) {
+    console.log(error + "");
+    return null;
   }
-  return getHex(color) + getHexAlpha(opacity);
 }
 function createVar(variable, opacity = "") {
   if (is.var(variable)) {
@@ -1307,7 +1410,7 @@ function calcOpacity(number) {
     return number > 1 ? number / 100 : number;
   }
 }
-function getItem(item = "", source = {}) {
+function getItem(item = "", source = {}, index = 0) {
   const [first, second] = item.replaceAll("\\", "").split("/");
   const UNIT = source?._unit || "";
   if (!first)
@@ -1328,39 +1431,67 @@ function getItem(item = "", source = {}) {
   if (is.var(first)) {
     return createVar(first);
   }
+  if (Array.isArray(UNIT)) {
+    return +item ? item + (UNIT[index] || "") : item;
+  }
   return +item ? item + UNIT : item;
 }
 function parseValue(value = "", source = {}) {
   if (!value)
     return null;
-  return value.split(/(?<!\\)\+/g).map((item) => {
+  if (!is.arr(value)) {
+    value = value.split(/(?<!\\)\+/g);
+  }
+  let fff = value.map((item, index) => {
     return {
-      val: source._vals?.[item] ?? getItem(item, source).replace(/\\/g, ""),
+      val: source._vals?.[item] ?? getItem(item, source, index)?.replace(/\\/g, ""),
       raw: item
     };
   });
+  if (fff.filter((e) => e.val).length) {
+    return fff;
+  }
+  return null;
 }
 
 // src/lib/parser/parse-styles.js
-function parseStyles(style, attr) {
-  let object = theme_default.attr[attr] || theme_default.class;
+function parseStyles(style, attr, token, states) {
+  const ctx2 = context_default.get();
+  let object = ctx2.attr[attr] || ctx2.class;
   let property = null;
   let values = null;
+  let important = false;
+  if (style.includes("!")) {
+    style = style.replace(/!/g, "");
+    important = true;
+  }
   let { source, path: path2, value } = parseRule(style, object);
   if (!source && attr !== "class") {
-    let [s, v] = theme_default.attr[attr]._else(style) || [null, null];
-    source = s;
-    value = v || style;
+    let _else = object._else?.({ style, token, states });
+    if (is.arr(_else)) {
+      let [s, v] = _else || [null, null];
+      source = is.obj(s) ? s : { _prop: s };
+      value = v || style;
+    } else if (is.obj(_else)) {
+      source = _else;
+      value = style;
+    } else {
+      source = { _prop: _else };
+      value = style;
+    }
   }
   if (!source)
     return;
   if (value) {
     property = source._prop;
     values = parseValue(value, source);
+    if (!values) {
+      return null;
+    }
   } else {
     property = source._one || source;
   }
-  if (!property || typeof property !== "string") {
+  if (!property || is.obj(property)) {
     return null;
   }
   return {
@@ -1371,7 +1502,8 @@ function parseStyles(style, attr) {
     rawVal: value,
     val: values?.map((e) => e.val).join(source._join || " ") || null,
     unit: source._unit || "",
-    join: source._join || " "
+    join: source._join || " ",
+    important
   };
 }
 
@@ -1380,19 +1512,16 @@ function parser(token = "", attr = "class") {
   let [styles, ...states] = token.split(/(?<!\\):/g).reverse();
   let selector = format_selector_default(token, attr);
   let rawSelector = selector;
-  states = states.map((e) => parseStates(e, attr));
+  states = states.map((e) => parseStates(e, attr, token));
   styles = styles.split(/(?<!\\);/g);
-  styles = styles.map((e) => parseStyles(e, attr));
+  styles = styles.map((e) => parseStyles(e, attr, token, states));
   styles = styles.filter((e) => e);
   if (!states.length) {
     states = null;
   }
   if (styles.length) {
     const EXTRA_SELECTOR = styles[0].src?._selector;
-    if (EXTRA_SELECTOR && is.str(EXTRA_SELECTOR)) {
-      selector = EXTRA_SELECTOR.replace(/\$/g, selector);
-    }
-    return { states, styles, attr, selector, rawSelector, token };
+    return { states, styles, attr, selector, rawSelector, token, extra: EXTRA_SELECTOR };
   }
   return null;
 }
@@ -1400,6 +1529,7 @@ function parser(token = "", attr = "class") {
 // src/lib/create-rule.js
 function createRule(token, attr) {
   const STRUCT = parser(token, attr);
+  let IS_MEDIA = false;
   if (!STRUCT)
     return null;
   const MEDIA = [];
@@ -1417,22 +1547,47 @@ function createRule(token, attr) {
         }
       } else if (state.type === "media") {
         MEDIA.push(state);
+        IS_MEDIA = true;
       }
     }
   }
-  for (const rule of STRUCT.styles) {
+  if (STRUCT.extra && is.str(STRUCT.extra)) {
+    STRUCT.selector = STRUCT.extra.replace(/\$/g, STRUCT.selector);
+  }
+  for (let rule of STRUCT.styles) {
     let style = rule.prop;
+    let postfix = rule.important ? " !important" : "";
     if (is.func(rule.prop)) {
       style = rule.prop(rule) || "";
-    } else if (rule.values) {
-      const REGEXP = /\$(\d+)?/g;
-      style = rule.prop.replace(REGEXP, (_, group) => {
+      if (is.obj(style)) {
+        style.prop = style._prop || rule.prop;
+        style.vals = style._vals || rule.vals;
+        style.one = style._one || rule.one;
+        style.unit = style._unit || rule.unit;
+        style.values = style._values || rule.values;
+        rule = { ...rule, ...style };
+      } else {
+        rule.prop = style;
+      }
+    }
+    const re = {
+      group: /\$(\d+)?/g,
+      space: /^\s*(.+?):\s*/
+    };
+    if (rule.values) {
+      style = rule.prop.replace(re.group, (_, group) => {
         if (group) {
-          return rule.values[group - 1]?.val || rule.val;
+          let vals = rule.values[group - 1] || rule.values[0];
+          let unit = is.arr(rule.unit) ? rule.unit : [rule.unit];
+          if (is.arr(rule.unit) && +vals.raw) {
+            return vals.raw + (rule.unit[group - 1] || "");
+          }
+          return vals.val || vals.raw;
         }
-        return rule.val;
+        return rule.val || rule.rawVal;
       });
     }
+    style = style.split(";").map((e) => e.replace(re.space, "$1:") + postfix).join(";");
     DECLARED.push(style);
   }
   const STYLE = DECLARED.join(";").replace(/(?<!\\)_/g, " ");
@@ -1440,32 +1595,209 @@ function createRule(token, attr) {
 }
 
 // src/store.js
-var B_STYLE_STORE = /* @__PURE__ */ Object.create(null);
-var B_ATTRS_STORE = /* @__PURE__ */ Object.create(null);
-var B_MEDIA_STORE = /* @__PURE__ */ Object.create(null);
-var B_CSS_STORE = /* @__PURE__ */ Object.create(null);
-B_CSS_STORE.MEDIA = {};
+var STYLE_STORE = /* @__PURE__ */ Object.create(null);
+var ATTRS_STORE = /* @__PURE__ */ Object.create(null);
+var MEDIA_STORE = /* @__PURE__ */ Object.create(null);
+var CSS_STORE = /* @__PURE__ */ Object.create(null);
+CSS_STORE.MEDIA = {};
 var _STORE_ = {
-  B_STYLE_STORE,
-  B_ATTRS_STORE,
-  B_MEDIA_STORE,
-  B_CSS_STORE
+  STYLE_STORE,
+  ATTRS_STORE,
+  MEDIA_STORE,
+  CSS_STORE
 };
 var store_default = _STORE_;
 
 // src/style-tag.js
-var B_STYLE_TAG = {
+var STYLE_TAG = {
   textContent: ""
 };
 if (typeof window !== "undefined") {
-  B_STYLE_TAG = document.createElement("style");
-  B_STYLE_TAG.id = "BLICK_OUTPUT";
-  document.head.append(B_STYLE_TAG);
+  STYLE_TAG = document.createElement("style");
+  STYLE_TAG.id = "BLICK_OUTPUT";
+  document.head.append(STYLE_TAG);
 }
-var style_tag_default = B_STYLE_TAG;
+var style_tag_default = STYLE_TAG;
 
 // version.js
 var version_default = "2.0";
+
+// src/lib/deep-clone.js
+function deepClone(obj) {
+  if (is.element(obj)) {
+    return obj;
+  }
+  if (typeof obj !== "object") {
+    return obj;
+  }
+  if (is.arr(obj)) {
+    return obj.map((e) => deepClone(e));
+  }
+  const clonedObj = {};
+  for (let key in obj) {
+    clonedObj[key] = deepClone(obj[key]);
+  }
+  return clonedObj;
+}
+
+// src/lib/create-root.js
+function create_root_default() {
+  const ctx2 = context_default.get();
+  let fonts = "";
+  let colors = "";
+  for (const type in ctx2?.font) {
+    fonts += `--font-${type}:${ctx2.font[type]};`;
+  }
+  for (const color in ctx2?.colors) {
+    if (is.str(ctx2.colors[color])) {
+      colors += `--${color}:${ctx2.colors[color]};`;
+      continue;
+    }
+    for (const num in ctx2.colors[color]) {
+      colors += `--${color + (num === "def" ? "" : "-" + num)}:${ctx2.colors[color][num]};`;
+    }
+  }
+  return `:root{${colors + fonts}}`;
+}
+
+// src/lib/create-css.js
+function create_css_default() {
+  const ctx2 = context_default.get();
+  const STORE = ctx2._STORE_.CSS_STORE;
+  let media_str = "";
+  let css_str = "";
+  for (const attr in STORE) {
+    if (attr === "MEDIA") {
+      for (const md in STORE.MEDIA) {
+        media_str += `@media${md}{${STORE.MEDIA[md]}}`;
+      }
+      continue;
+    }
+    css_str += STORE[attr];
+  }
+  let result_css = "";
+  result_css += `/* ! blickcss v${ctx2.version} | MIT License | https://github.com/ghtx280/blickcss */
+
+`;
+  if (ctx2.reset) {
+    result_css += ctx2.reset;
+  }
+  if (ctx2.root) {
+    result_css += create_root_default();
+  }
+  if (ctx2.wrapper) {
+    result_css += `${ctx2.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}`;
+  }
+  for (const key in ctx2.attr) {
+    if (ctx2.attr[key]?._using && key in STORE) {
+      result_css += `[${key}]{${ctx2.attr[key]._using}}`;
+    }
+  }
+  if (ctx2.autoFlex) {
+    result_css += '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}';
+  }
+  return result_css + css_str + media_str;
+}
+
+// src/lib/prerender.js
+function prerender_default() {
+  const ctx2 = context_default.get();
+  if (!ctx2.dark) {
+    ctx2.dark = ctx2.states.dark("").trim();
+  }
+  if (typeof window !== void 0) {
+    if (ctx2.autoTheme && matchMedia("(prefers-color-scheme: dark)").matches) {
+      if (ctx2.dark.startsWith(".")) {
+        document.documentElement.classList.add(ctx2.dark.slice(1));
+      } else if (ctx2.dark.startsWith("#")) {
+        document.documentElement.id = ctx2.dark.slice(1);
+      } else if (ctx2.dark.startsWith("[") && ctx2.dark.endsWith("]")) {
+        document.documentElement.setAttribute(ctx2.dark.slice(1, -1));
+      }
+    }
+  }
+  if (ctx2.wrapper) {
+    for (const scr in ctx2.screen) {
+      let size = ctx2.screen[scr];
+      ctx2._STORE_.CSS_STORE.MEDIA[parseMedia(scr)] = ctx2.wrapper + `{max-width:${is.num(size) ? size : size[0]}px}`;
+    }
+  }
+}
+
+// src/lib/update-store.js
+function updateStore(token, attr) {
+  const ctx2 = context_default.get();
+  const AS = ctx2._STORE_.ATTRS_STORE;
+  const SS = ctx2._STORE_.STYLE_STORE;
+  const MS = ctx2._STORE_.MEDIA_STORE;
+  const CS = ctx2._STORE_.CSS_STORE;
+  if (!(attr in CS))
+    CS[attr] = "";
+  if (!(attr in SS))
+    SS[attr] = /* @__PURE__ */ Object.create(null);
+  if (!(attr in AS))
+    AS[attr] = /* @__PURE__ */ Object.create(null);
+  if (token in SS[attr])
+    return false;
+  if (token in AS[attr])
+    return false;
+  AS[attr][token] = true;
+  const [MEDIA, RULE] = ctx2.createRule(token, attr) || [[], ""];
+  if (!RULE) {
+    SS[attr][token] = null;
+    return false;
+  }
+  if (MEDIA.length) {
+    for (const m of MEDIA) {
+      if (!(m.raw in MS))
+        MS[m.raw] = /* @__PURE__ */ Object.create(null);
+      if (!(m.val in CS.MEDIA))
+        CS.MEDIA[m.val] = "";
+      if (token in MS[m.raw])
+        return false;
+      MS[m.raw][token] = RULE;
+      CS.MEDIA[m.val] += RULE;
+    }
+  } else {
+    SS[attr][token] = RULE;
+    CS[attr] += RULE;
+  }
+  return true;
+}
+
+// src/node/funcs/create-attr-regexp.js
+function createAttrRegexp(attr = "class") {
+  attr = attr == "class" ? "(?:class|className)" : attr;
+  const REGEXP = `\\s+${attr}\\s*=\\s*(["'\`])(.*?)\\1`;
+  const FLAGS = "g";
+  return new RegExp(REGEXP, FLAGS);
+}
+
+// src/lib/from-html.js
+var ctx;
+var STORE_COPY = structuredClone(store_default);
+function from_html_default(html = "", config2) {
+  if (config2 || !ctx) {
+    ctx = theme_default.clone();
+    ctx.config(config2);
+    context_default.set(ctx);
+  }
+  const ATTRS = ["class", ...Object.keys(ctx.attr)];
+  ctx._STORE_ = structuredClone(STORE_COPY);
+  prerender_default();
+  for (const attr of ATTRS) {
+    const MATCHES = [...html.matchAll(createAttrRegexp(attr))];
+    if (MATCHES.length) {
+      const ATTR_VALUE = MATCHES.map((e) => e[2]).join(" ");
+      if (ATTR_VALUE.trim()) {
+        for (const token of ATTR_VALUE.trim().split(/\s+/g)) {
+          updateStore(token, attr);
+        }
+      }
+    }
+  }
+  return create_css_default();
+}
 
 // src/theme/index.js
 var BLICK = {
@@ -1493,169 +1825,22 @@ var BLICK = {
   is,
   parser,
   _STORE_: store_default,
-  style_tag: style_tag_default,
   createRule,
+  getStyleTag: () => style_tag_default,
+  clone(field) {
+    return deepClone(field ? this[field] : this);
+  },
+  html: from_html_default,
   ...funcs_default
 };
 var theme_default = BLICK;
 
-// src/lib/create-root.js
-function create_root_default() {
-  let fonts = "";
-  let colors = "";
-  for (const type in theme_default?.font) {
-    fonts += `--font-${type}:${theme_default.font[type]};`;
+// src/node/funcs/create-error.js
+import chalk from "chalk";
+function createError(stack) {
+  for (const [color, msg] of stack) {
+    console.log(chalk[color].bold(msg));
   }
-  for (const color in theme_default?.colors) {
-    if (is.str(theme_default.colors[color])) {
-      colors += `--${color}:${theme_default.colors[color]};`;
-      continue;
-    }
-    for (const num in theme_default.colors[color]) {
-      colors += `--${color + (num === "def" ? "" : "-" + num)}:${theme_default.colors[color][num]};`;
-    }
-  }
-  return `:root{${colors + fonts}}`;
-}
-
-// src/lib/create-css.js
-function create_css_default(root2) {
-  let media_str = "";
-  let css_str = "";
-  let CSS = theme_default._STORE_.B_CSS_STORE;
-  for (const attr in CSS) {
-    if (attr === "MEDIA") {
-      for (const md in CSS.MEDIA) {
-        let aaa = "";
-        aaa += CSS.MEDIA[md];
-        media_str += `@media ${md} {
-${aaa}}
-`;
-      }
-      continue;
-    }
-    css_str += CSS[attr] + "\n";
-  }
-  return `/* ! blickcss v${theme_default.version} | MIT License | https://github.com/ghtx280/blickcss */
-
-` + (theme_default.reset ? theme_default.reset : "") + (theme_default.root ? root2 : "") + (theme_default.wrapper ? `${theme_default.wrapper}{display:block;width:100%;margin:0 auto;padding-left:var(--wrapper-padding,15px);padding-right:var(--wrapper-padding,15px)}` : "") + (theme_default.useAttr ? `[flex]{display:flex}[grid]{display:grid}` : "") + (theme_default.autoFlex ? '[class*="flex-"],[class*="jc-"],[class*="ai-"],[class*="gap-"]{display:flex}' : "") + css_str + media_str;
-}
-
-// src/lib/prerender.js
-function prerender_default() {
-  if (!theme_default.dark) {
-    theme_default.dark = theme_default.states.dark("").trim();
-  }
-  if (typeof window !== void 0) {
-    if (theme_default.autoTheme && matchMedia("(prefers-color-scheme: dark)").matches) {
-      if (theme_default.dark.startsWith(".")) {
-        document.documentElement.classList.add(theme_default.dark.slice(1));
-      } else if (theme_default.dark.startsWith("#")) {
-        document.documentElement.id = theme_default.dark.slice(1);
-      } else if (theme_default.dark.startsWith("[") && theme_default.dark.endsWith("]")) {
-        document.documentElement.setAttribute(theme_default.dark.slice(1, -1));
-      }
-    }
-  }
-  if (theme_default.wrapper) {
-    for (const scr in theme_default.screen) {
-      let size = theme_default.screen[scr];
-      theme_default._STORE_.B_CSS_STORE.MEDIA[parseMedia(scr)] = theme_default.wrapper + `{max-width:${is.num(size) ? size : size[0]}px}`;
-    }
-  }
-}
-
-// src/lib/timer.js
-function timer(label) {
-  const startTime = performance.now();
-  return {
-    stop: function() {
-      const endTime = performance.now();
-      const elapsedTime = endTime - startTime;
-      console.log(`${label}: ${elapsedTime.toFixed(1)}ms`);
-    }
-  };
-}
-
-// src/lib/helpers.js
-function getTruthyKeys2(obj) {
-  if (typeof obj !== "object") {
-    return [];
-  }
-  const entries = Object.entries(obj);
-  const filtered = entries.filter(([key, val]) => val);
-  return filtered.map(([key, val]) => key);
-}
-
-// src/lib/check-record.js
-var ATTRS = ["class", ...getTruthyKeys2(theme_default.attr)];
-
-// src/lib/render.js
-var once;
-var root;
-function render_default(record, params = {}) {
-  const AS = theme_default._STORE_.B_ATTRS_STORE;
-  const SS = theme_default._STORE_.B_STYLE_STORE;
-  const MS = theme_default._STORE_.B_MEDIA_STORE;
-  const CS = theme_default._STORE_.B_CSS_STORE;
-  const TIMER = timer("Blick: Styles updated");
-  const ATTRS2 = ["class", ...getTruthyKeys2(theme_default.attr)];
-  const NODES = params.NODES || document.querySelectorAll(ATTRS2.map((e) => `[${e}]`).join());
-  if (!once || theme_default._CLI_) {
-    root = create_root_default();
-    prerender_default();
-    once = true;
-  }
-  let is_style_updated;
-  NODES.forEach((node) => {
-    for (const attr of ATTRS2) {
-      let ATTR_VALUE = node.getAttribute(attr);
-      if (is.str(ATTR_VALUE))
-        ATTR_VALUE = ATTR_VALUE.trim();
-      if (!ATTR_VALUE)
-        continue;
-      for (const token of ATTR_VALUE.trim().split(/\s+/g)) {
-        if (!(attr in CS))
-          CS[attr] = "";
-        if (!(attr in SS))
-          SS[attr] = /* @__PURE__ */ Object.create(null);
-        if (!(attr in AS))
-          AS[attr] = /* @__PURE__ */ Object.create(null);
-        if (token in SS[attr])
-          continue;
-        if (token in AS[attr])
-          continue;
-        AS[attr][token] = true;
-        const [MEDIA, RULE] = createRule(token, attr) || [[], ""];
-        if (!RULE) {
-          SS[attr][token] = null;
-          continue;
-        }
-        if (MEDIA.length) {
-          for (const m of MEDIA) {
-            if (!(m.raw in MS))
-              MS[m.raw] = /* @__PURE__ */ Object.create(null);
-            if (!(m.val in CS.MEDIA))
-              CS.MEDIA[m.val] = "";
-            if (token in MS[m.raw])
-              continue;
-            MS[m.raw][token] = RULE;
-            CS.MEDIA[m.val] += RULE + "\n";
-          }
-        } else {
-          SS[attr][token] = RULE;
-          CS[attr] += RULE + "\n";
-        }
-        is_style_updated = true;
-      }
-    }
-  });
-  if (is_style_updated) {
-    style_tag_default.textContent = create_css_default(root);
-    if (theme_default.time)
-      TIMER.stop();
-  }
-  return style_tag_default.textContent;
 }
 
 // src/node/funcs/make-hex.js
@@ -1833,7 +2018,8 @@ function make_hex_default(color, opacity) {
     }
   } else {
     if (!color_names[color]) {
-      throw new SyntaxError(`Invalid color "${color}"`);
+      createError([["red", `Invalid color "${color}"`]]);
+      return null;
     }
     return color_names[color] + opacity;
   }
@@ -1843,7 +2029,7 @@ function make_hex_default(color, opacity) {
 var default_config_default = (
   /*js*/
   `
-import { config } from "blickcss2"
+import blick, { config } from "blickcss2"
 
 export default config({
     
@@ -1855,12 +2041,14 @@ export default config({
     beautify: true, // For beautify css code
     watch: true, // For watching changing the input files and rebuilding
 
-    // Uncomment the code below so that only your classes are created
+    
+    // Uncomment the code below so that only your styles are created
+
     // reset: false,
     // root: false,
     // wrapper: false,
     // autoFlex: false,
-    // useAttr: false,
+
 })
 `
 );
@@ -1877,22 +2065,6 @@ function isModule() {
   } catch (error) {
     return null;
   }
-}
-
-// src/node/funcs/deep-clone.js
-function deepClone(obj) {
-  if (obj === null || typeof obj !== "object" || typeof obj === "function") {
-    return obj;
-  }
-  if (Array.isArray(obj)) {
-    const clonedArray = obj.map((e) => deepClone(e));
-    return clonedArray;
-  }
-  const clonedObj = {};
-  for (let key in obj) {
-    clonedObj[key] = deepClone(obj[key]);
-  }
-  return clonedObj;
 }
 
 // src/node/funcs/cssbeautify.js
@@ -2221,41 +2393,10 @@ function cssbeautify(style = "", options = {
   return formatted;
 }
 
-// src/node/funcs/process-file.js
-import fs from "fs";
-
-// src/node/funcs/create-attr-regexp.js
-function createAttrRegexp(attr = "class") {
-  attr = attr == "class" ? "(?:class|className)" : attr;
-  const REGEXP = `${attr}\\s*=\\s*(["'\`])(.*?)\\1`;
-  const FLAGS = "g";
-  return new RegExp(REGEXP, FLAGS);
-}
-
-// src/node/funcs/process-file.js
-function processFile(file, attrs) {
-  const html = fs.readFileSync(file, "utf-8");
-  if (!file) {
-    return console.error("BlickCss: File error");
-  }
-  const NODE = {
-    getAttribute: function(token) {
-      return this[token];
-    }
-  };
-  for (const attr of attrs) {
-    const ATTR_REGEXP = createAttrRegexp(attr);
-    const MATCHES = html.matchAll(ATTR_REGEXP);
-    const MATCHES_ARR = [...MATCHES];
-    NODE[attr] = MATCHES_ARR.map((e) => e[2]).join(" ");
-  }
-  return NODE;
-}
-
 // src/node/funcs/show-msg.js
+import chalk2 from "chalk";
 var times = 1;
-function showMsg(file, params) {
-  const STACK = [];
+function showMsg(file, params, time) {
   const date = /* @__PURE__ */ new Date();
   let h = date.getHours();
   let m = date.getMinutes();
@@ -2263,90 +2404,119 @@ function showMsg(file, params) {
   h = h < 10 ? "0" + h : h;
   m = m < 10 ? "0" + m : m;
   s = s < 10 ? "0" + s : s;
-  STACK.push(`[${h}:${m}:${s}] Number of updates: ${times++}`);
-  STACK.push(`-------------------`);
+  console.log(
+    "\n\n",
+    chalk2.yellow(`[${h}:${m}:${s}]`),
+    chalk2.blue(`Updates: ${times++}, ${time}`)
+  );
+  console.log(`-------------------`);
   if (file) {
     let upd_file = file.replaceAll("\\", "/");
-    STACK.push(`'${upd_file}' was changed.`);
+    console.log(chalk2.green.bold(`'${upd_file}' was changed.`));
   }
   if (params.output) {
     let out_file = params.output.replaceAll(/\.+\//g, "");
-    STACK.push(`'${out_file}' updated successfully.`);
+    console.log(chalk2.green.bold(`'${out_file}' updated successfully.`));
   }
-  STACK.push(`-------------------`);
+  console.log(`-------------------`);
   if (params.watch) {
-    STACK.push(`Waiting for changes...`);
+    console.log(chalk2.gray.bold(`Waiting for changes...`));
   }
-  console.log(`
-${STACK.join("\n")}
-`);
 }
 
 // src/node/funcs/node-helpers.js
-import fs2 from "fs";
+import fs from "fs";
 function mkdirIfNotExist(path2) {
-  if (!fs2.existsSync(path2)) {
-    fs2.mkdirSync(path2, { recursive: true });
+  if (!fs.existsSync(path2)) {
+    fs.mkdirSync(path2, { recursive: true });
     return true;
   }
   return false;
 }
 function writeFileIfNotExist(path2, content) {
-  if (!fs2.existsSync(path2)) {
-    fs2.writeFileSync(path2, content);
+  if (!fs.existsSync(path2)) {
+    fs.writeFileSync(path2, content);
     return true;
   }
   return false;
 }
 
+// src/lib/timer.js
+function timer(label) {
+  const startTime = performance.now();
+  const diff = () => performance.now() - startTime;
+  return {
+    stop() {
+      console.log(`${label}: ${diff().toFixed(1)}ms`);
+    },
+    get() {
+      return diff().toFixed(1);
+    },
+    getFormated() {
+      return `${diff().toFixed(1)}ms`;
+    }
+  };
+}
+
 // src/node/index.js
 console.log("\n================BlickCss================\n");
 try {
+  const ctx2 = context_default.set(theme_default);
   const DIR = path.dirname(url.fileURLToPath(import.meta.url));
   const CWD = process.cwd();
   const CONFIG_FILE_NAME = `blick.config.${!isModule() ? "m" : ""}js`;
   const CONFIG_FILE_PATH = path.resolve(CONFIG_FILE_NAME);
   const CONFIG_FILE_PATH_REL = path.relative(DIR, CONFIG_FILE_PATH);
-  const STORE_COPY = deepClone(theme_default._STORE_);
-  const BLICK_COPY = deepClone(theme_default);
-  theme_default._COLOR_ = make_hex_default;
-  theme_default._CLI_ = true;
+  ctx2._COLOR_ = make_hex_default;
+  ctx2._CLI_ = true;
+  let user_config = {};
+  let config_changed = false;
   async function filesUpdate(updatedFile) {
-    theme_default._STORE_ = deepClone(STORE_COPY);
-    const FILES = fg.sync(theme_default.input);
-    const ATTRS2 = ["class", ...getTruthyKeys(theme_default.attr)];
-    const NODES = [];
+    let tmr = timer();
+    const FILES = fg.sync(user_config.input);
+    let filesText = "";
     for (const file of FILES) {
-      NODES.push(processFile(file, ATTRS2));
+      filesText += fs2.readFileSync(file, "utf-8");
     }
-    let CSS = render_default(null, { NODES });
-    if (theme_default.beautify) {
+    let CSS = ctx2.html(filesText, config_changed ? user_config : null);
+    if (user_config.beautify) {
       CSS = cssbeautify(CSS);
     }
-    mkdirIfNotExist(path.dirname(theme_default.output));
-    fs3.writeFile(theme_default.output, CSS, (err) => {
+    mkdirIfNotExist(path.dirname(user_config.output));
+    fs2.writeFile(user_config.output, CSS, (err) => {
       if (err) {
         return console.error(`BlickCss: Error writing file`, err);
       }
-      showMsg(updatedFile, theme_default);
+      showMsg(updatedFile, user_config, tmr.getFormated());
     });
+    config_changed = false;
   }
+  let watching_files;
   async function handleConfigUpdate() {
+    watching_files?.close();
     const PATH = `./${CONFIG_FILE_PATH_REL}?update=${Date.now()}`;
-    const CONFIG = await import(PATH);
-    theme_default.config({ ...BLICK_COPY, ...CONFIG.default });
-    filesUpdate();
+    await new Promise((resolve2, reject) => {
+      import(PATH).then((CONFIG) => {
+        user_config = CONFIG.default;
+        config_changed = true;
+        filesUpdate();
+        resolve2();
+      }).catch((e) => createError([
+        ["red", e + " in " + CONFIG_FILE_NAME],
+        ["red", "Please check your config file"]
+      ]));
+    });
+    if (user_config.watch) {
+      watching_files = chokidar.watch(user_config.input).on("change", (filePath) => {
+        filesUpdate(filePath);
+      });
+    }
   }
   ;
   async function main() {
     writeFileIfNotExist(CONFIG_FILE_PATH, default_config_default);
     await handleConfigUpdate();
     chokidar.watch(CONFIG_FILE_PATH).on("change", handleConfigUpdate);
-    if (theme_default.watch) {
-      chokidar.watch(theme_default.input).on("change", (filePath) => {
-        filesUpdate(filePath);
-      });
-    }
   }
   main();
 } catch (error) {

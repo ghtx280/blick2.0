@@ -16,9 +16,11 @@ import { parser     } from '../lib/parser/index.js';
 import { createRule } from '../lib/create-rule.js';
 
 import _STORE_     from '../store.js';
-import B_STYLE_TAG from '../style-tag.js';
+import STYLE_TAG from '../style-tag.js';
 
 import version from '../../version.js';
+import { deepClone } from '../lib/deep-clone.js';
+import fromHtml from '../lib/from-html.js';
 
 const BLICK = {
     class: _class,
@@ -52,20 +54,16 @@ const BLICK = {
     is,
     parser: parser,
     _STORE_: _STORE_,
-    style_tag: B_STYLE_TAG,
     createRule: createRule,
+    getStyleTag: () => STYLE_TAG,
+
+    clone(field) {
+        return deepClone(field ? this[field] : this)
+    },
+
+    html: fromHtml,
 
     ...funcs,
 };
-
-
-
-
-
-// BLICK.is = is;
-// BLICK.parser = parser;
-// BLICK._STORE_ = _STORE_;
-// BLICK.style_tag = B_STYLE_TAG;
-// BLICK.createRule = createRule;
 
 export default BLICK;

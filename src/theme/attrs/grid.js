@@ -16,8 +16,11 @@ const i_vals = {
 };
 
 export default {
-    _else: function (val) {
-        if (+val[0]) {
+    _name: 'grid',
+    _using: "display:grid",
+
+    _else: function (e) {
+        if (+e.style[0]) {
             return [{ _prop: 'gap:$', _unit: 'px' }];
         }
     },

@@ -9,22 +9,23 @@ import path     from 'path';
 import chokidar from 'chokidar';
 
 import BLICK  from '../theme/index.js';
-import RENDER from '../lib/render.js';
 import COLOR  from './funcs/make-hex.js';
 import CONFIG from './default-config.js';
 
 import { isModule      } from './funcs/is-module.js';
-import { deepClone     } from './funcs/deep-clone.js';
 import { cssbeautify   } from './funcs/cssbeautify.js';
-import { processFile   } from './funcs/process-file.js';
 import { showMsg       } from './funcs/show-msg.js';
 
 import {
     mkdirIfNotExist,
     writeFileIfNotExist
 } from './funcs/node-helpers.js';
+import { createError } from './funcs/create-error.js';
+import { timer } from '../lib/timer.js';
+import context from '../context.js';
 
 try {
+    const ctx = context.set(BLICK);
     const DIR = path.dirname(url.fileURLToPath(import.meta.url));
     const CWD = process.cwd();
 
@@ -32,46 +33,66 @@ try {
     const CONFIG_FILE_PATH = path.resolve(CONFIG_FILE_NAME)
     const CONFIG_FILE_PATH_REL = path.relative(DIR, CONFIG_FILE_PATH);
 
-    const STORE_COPY = deepClone(BLICK._STORE_);
-    const BLICK_COPY = deepClone(BLICK);
+    ctx._COLOR_ = COLOR;
+    ctx._CLI_ = true;
 
-    BLICK._COLOR_ = COLOR;
-    BLICK._CLI_ = true;
+    let user_config = {}
+    let config_changed = false;
 
     async function filesUpdate(updatedFile) {
-        BLICK._STORE_ = deepClone(STORE_COPY)
+        let tmr = timer()
+        const FILES = fg.sync(user_config.input);
 
-        const FILES = fg.sync(BLICK.input);
-        const ATTRS = ["class", ...getTruthyKeys(BLICK.attr)];
-        const NODES = [];
+        let filesText = ""
 
         for (const file of FILES) {        
-            NODES.push(processFile(file, ATTRS));
+            filesText += fs.readFileSync(file, "utf-8")
         }
-
-        let CSS = RENDER(null, { NODES });
-
-        if (BLICK.beautify) {
+        
+        let CSS = ctx.html(filesText, config_changed ? user_config : null)
+        
+        if (user_config.beautify) {
             CSS = cssbeautify(CSS);
         }
 
-        mkdirIfNotExist(path.dirname(BLICK.output))
+        mkdirIfNotExist(path.dirname(user_config.output))
 
-        fs.writeFile(BLICK.output, CSS, (err) => {
+        fs.writeFile(user_config.output, CSS, (err) => {
             if (err) {
                 return console.error(`BlickCss: Error writing file`, err);
             }
-            showMsg(updatedFile, BLICK)
+            showMsg(updatedFile, user_config, tmr.getFormated())
         });
+
+        config_changed = false
     }
 
+    let watching_files
+
     async function handleConfigUpdate() {
+        watching_files?.close()
+
         const PATH = `./${CONFIG_FILE_PATH_REL}?update=${Date.now()}`
-        const CONFIG = await import(PATH)
+        await new Promise((resolve, reject) => {
+            import(PATH).then(CONFIG => {
 
-        BLICK.config({ ...BLICK_COPY, ...CONFIG.default });
+                user_config = CONFIG.default
+                config_changed = true;
+                filesUpdate();
+                resolve()
+    
+            }).catch(e => createError([
+                ["red", e + " in "+ CONFIG_FILE_NAME],
+                ["red", "Please check your config file"]
+            ]));
+        });
 
-        filesUpdate();
+
+        if (user_config.watch) {
+            watching_files = chokidar.watch(user_config.input).on('change', (filePath) => {
+                filesUpdate(filePath);
+            })
+        }
     };
 
 
@@ -81,14 +102,7 @@ try {
         await handleConfigUpdate();
     
         chokidar.watch(CONFIG_FILE_PATH).on('change', handleConfigUpdate);
-    
-        if (BLICK.watch) {
-            chokidar.watch(BLICK.input).on('change', (filePath) => {
-                filesUpdate(filePath);
-            });
-        }
     }
-    
     main();
 }
 catch (error) {

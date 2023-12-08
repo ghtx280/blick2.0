@@ -1,4 +1,4 @@
-import BLICK from "./src/theme/index.js";
+import blick from "./src/theme/index.js";
 
-export const theme = BLICK;
-export const config = (obj = BLICK) => obj
+export default blick;
+export const config = (obj = blick) => obj

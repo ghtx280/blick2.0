@@ -16,9 +16,12 @@ const i_vals = {
 };
 
 export default {
-    _else: function (val) {
-        if (+val[0]) {
-            return [{ _prop: 'gap:$', _unit: 'px' }];
+    _name: 'flex',
+    _using: "display:flex",
+
+    _else: function (e) {
+        if (!isNaN(+e.style[0])) {
+            return { _prop: 'gap:$', _unit: 'px' };
         }
     },
     col: {

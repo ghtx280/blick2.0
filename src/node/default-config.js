@@ -1,5 +1,5 @@
 export default /*js*/`
-import { config } from "blickcss2"
+import blick, { config } from "blickcss2"
 
 export default config({
     
@@ -11,11 +11,13 @@ export default config({
     beautify: true, // For beautify css code
     watch: true, // For watching changing the input files and rebuilding
 
-    // Uncomment the code below so that only your classes are created
+    
+    // Uncomment the code below so that only your styles are created
+
     // reset: false,
     // root: false,
     // wrapper: false,
     // autoFlex: false,
-    // useAttr: false,
+
 })
 `

@@ -9,23 +9,28 @@ if (typeof window !== 'undefined') {
     canvas_ctx = canvas.getContext('2d');
 }
 
-export function config(updates, source = this, isFirstCall = true) {
+export function config(updates = this, source = this, isFirstCall = true) {
+    if (updates === source) return source
+    
+    
     if (!is.obj(updates)) {
-        throw new Error(
+        console.error(
             'Blick: The blick.config function must contain an object.'
         );
+        return
     }
+
     for (let key in updates) {
-        if (
-            is.obj(updates[key]) &&
-            updates[key] !== null &&
-            !Array.isArray(updates[key])
-        ) {
-            if (!source[key] || typeof source[key] == 'string') {
+        if (is.null(updates[key]) || is.undef(updates[key])) {
+            delete source[key]
+        }
+        else if (is.obj(updates[key]) && !is.arr(updates[key])) {
+            if (!source[key] || is.str(source[key])) {
                 source[key] = {};
             }
-            this.config(updates[key], source[key], false);
-        } else {
+            config(updates[key], source[key], false);
+        }
+        else {
             source[key] = updates[key];
         }
     }
